@@ -1,26 +1,32 @@
 # Current State
 
 ## Active Task
-README.md rewrite — remove AI/ML references, add detailed product guide
+Build artifacts for all 3 platforms and publish GitHub release
 
 ## Status
 completed
 
 ## Completion
-100% — README updated, AI removed, build & tests verified
+100% — All 3 platform builds done, GitHub release R-1.0.0 created and verified
 
 ## Last Action
-Rewrote README.md: removed all AI/ML references (feature list, projects table, AI/ML section, project structure), added comprehensive "Product Guide" section (~150 lines) covering SQL query syntax, table name formats, connection strings per provider, CLI usage with 5 real-world examples, batch size tuning guide, internal deletion strategies per provider, WHERE clause behavior, logging details, REST API section.
+Created GitHub release R-1.0.0 at michalagata/DatabaseDeletor with 5 assets:
+- DatabaseDeletor.Linux.zip (42 MB)
+- DatabaseDeletor.macOS.zip (39 MB)
+- DatabaseDeletor.Windows.zip (42 MB)
+- README.md
+- version.txt
 
 ## Next Step
-None — user's request fully completed.
+None — task fully completed.
 
 ## Files Modified This Session
-- `README.md` — Removed AI/ML references, added Product Guide section, updated project counts
-- `DatabaseDeletor.sln` — Removed Infrastructure.AI project (prior step)
-- `src/DatabaseDeletor.Infrastructure.AI/` — Entire directory deleted (prior step)
-- `src/DatabaseDeletor.Domain/Interfaces/IInferenceService.cs` — Deleted (prior step)
-- `src/DatabaseDeletor.Domain/Interfaces/ITrainingService.cs` — Deleted (prior step)
+- `scripts/_GithubPublish.sh` — Dynamic solution name detection
+- `scripts/_buildAndPublishAndReleaseAll.sh` — Dynamic naming, graceful Versioner fallback
+- `scripts/_common.sh` — Added detect_platform(), find_csproj_files()
+- `scripts/_publishLocal.sh` — Fully dynamic artifact/install paths
+- `version.txt` — Created with 1.0.0
+- `.gitignore` — Added .nuget-api-key exclusion
 
 ## Open Decisions
 - None
@@ -30,12 +36,13 @@ None — user's request fully completed.
 
 ## Git State
 - Branch: master
-- Last commit: 6875ec5 final1
-- Uncommitted changes: yes (README.md update, AI removal from prior step)
+- Last commit: 079001d Add .nuget-api-key to .gitignore
+- Remote: origin = https://github.com/michalagata/DatabaseDeletor.git (pushed to main)
+- Uncommitted changes: no
 
 ## Loaded Rules
-- general.md, dotnet.md, docker.md, bash.md
+- general.md, dotnet.md, bash.md
 
 ## User Preferences (This Session)
-- Describe product in detail with usage examples in README.md
-- Remove AI/ML if not necessary (confirmed: removed)
+- Publish to GitHub releases only
+- Target repository: michalagata/DatabaseDeletor

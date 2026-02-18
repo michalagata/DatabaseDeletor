@@ -132,3 +132,32 @@
 - Files: README.md (rewritten)
 - Result: Build 0W 0E, 203 tests passing. README now 9 projects (5 src + 4 test) instead of 11.
 - Decision: Product guide covers DELETE FROM and SELECT FROM syntax, 4 providers, all CLI options with examples
+
+## [2026-02-18 20:00] Session 6: Script fixes + Build + GitHub Release
+- Task: Fix scripts, build all 3 platforms, publish GitHub release to michalagata/DatabaseDeletor
+
+## [2026-02-18 20:01] Step 12: Script Fixes (from previous session)
+- Action: Replaced hardcoded Versioner references in 4 scripts, added missing functions to _common.sh
+- Files: scripts/_GithubPublish.sh, scripts/_buildAndPublishAndReleaseAll.sh, scripts/_common.sh, scripts/_publishLocal.sh
+- Result: All scripts now use dynamic solution name detection
+
+## [2026-02-18 20:10] Step 13: Cross-platform publish
+- Action: Ran `dotnet publish` for linux-x64, osx-arm64, win-x64 (all self-contained)
+- Files: DEPLOYMENT/net10.0/{linux-x64,osx-arm64,win-x64}/publish/
+- Result: All 3 platforms published successfully
+
+## [2026-02-18 20:15] Step 14: Create ZIP artifacts
+- Action: Created DatabaseDeletor.{Linux,macOS,Windows}.zip from publish directories
+- Files: DEPLOYMENT/DatabaseDeletor.Linux.zip (42MB), DEPLOYMENT/DatabaseDeletor.macOS.zip (39MB), DEPLOYMENT/DatabaseDeletor.Windows.zip (42MB)
+- Result: All 3 ZIP artifacts created
+
+## [2026-02-18 20:20] Step 15: Push to GitHub + Remove secret
+- Action: Rebased onto origin/main, removed .nuget-api-key from history (git filter-branch), added to .gitignore, pushed to main
+- Files: .gitignore (updated), .nuget-api-key (removed from history)
+- Result: Push successful after removing NuGet API key secret
+
+## [2026-02-18 20:25] Step 16: GitHub Release R-1.0.0
+- Action: Ran _GithubPublish.sh to create release R-1.0.0 with all artifacts
+- Result: Release created and verified — PUBLISHED (not draft), 5 assets uploaded
+- URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.0.0
+- Assets: DatabaseDeletor.Linux.zip (43MB), DatabaseDeletor.macOS.zip (40MB), DatabaseDeletor.Windows.zip (44MB), README.md, version.txt

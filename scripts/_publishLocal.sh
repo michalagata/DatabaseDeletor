@@ -60,7 +60,7 @@ echo ""
 NUGET_SOURCE="${1:-local}"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="$PROJECT_ROOT/DEPLOYMENT/packages"
-INSTALL_DIR="$HOME/.dotnet/tools"
+INSTALL_DIR="$HOME/Apps/$SOLUTION_NAME"
 
 echo "Starting local publish process..."
 echo "NuGet source: $NUGET_SOURCE"
