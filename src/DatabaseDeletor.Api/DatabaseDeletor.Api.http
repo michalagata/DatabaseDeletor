@@ -1,0 +1,6 @@
+@DatabaseDeletor.Api_HostAddress = http://localhost:5048
+
+GET {{DatabaseDeletor.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

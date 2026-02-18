@@ -1,0 +1,346 @@
+#!/usr/bin/env zsh
+# Clean script for Versioner project
+
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Script configuration
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+CLEAN_BUILD="${CLEAN_BUILD:-true}"
+CLEAN_OBJ="${CLEAN_OBJ:-true}"
+CLEAN_BIN="${CLEAN_BIN:-true}"
+CLEAN_DEPLOYMENT="${CLEAN_DEPLOYMENT:-false}"
+CLEAN_DOCKER="${CLEAN_DOCKER:-false}"
+CLEAN_LOGS="${CLEAN_LOGS:-true}"
+CLEAN_TEMP="${CLEAN_TEMP:-true}"
+
+# Logging functions
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Help function
+show_help() {
+    cat << EOF
+Versioner Clean Script
+
+Usage: $0 [OPTIONS]
+
+OPTIONS:
+    --no-build         Don't clean build outputs
+    --no-obj           Don't clean obj directories
+    --no-bin           Don't clean bin directories
+    --deployment        Clean deployment directory
+    --docker           Clean Docker images and containers
+    --logs             Clean log files
+    --temp             Clean temporary files
+    -a, --all          Clean everything
+    -h, --help         Show this help message
+
+EXAMPLES:
+    $0                                    # Clean build outputs and temp files
+    $0 --all                             # Clean everything
+    $0 --docker --deployment             # Clean Docker and deployment
+    $0 --no-build --logs                 # Clean logs only
+
+ENVIRONMENT VARIABLES:
+    CLEAN_BUILD       Clean build outputs (overrides --no-build)
+    CLEAN_OBJ         Clean obj directories (overrides --no-obj)
+    CLEAN_BIN         Clean bin directories (overrides --no-bin)
+    CLEAN_DEPLOYMENT  Clean deployment directory (overrides --deployment)
+    CLEAN_DOCKER      Clean Docker (overrides --docker)
+    CLEAN_LOGS        Clean logs (overrides --logs)
+    CLEAN_TEMP        Clean temp files (overrides --temp)
+EOF
+}
+
+# Parse command line arguments
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --no-build)
+                CLEAN_BUILD="false"
+                shift
+                ;;
+            --no-obj)
+                CLEAN_OBJ="false"
+                shift
+                ;;
+            --no-bin)
+                CLEAN_BIN="false"
+                shift
+                ;;
+            --deployment)
+                CLEAN_DEPLOYMENT="true"
+                shift
+                ;;
+            --docker)
+                CLEAN_DOCKER="true"
+                shift
+                ;;
+            --logs)
+                CLEAN_LOGS="true"
+                shift
+                ;;
+            --temp)
+                CLEAN_TEMP="true"
+                shift
+                ;;
+            -a|--all)
+                CLEAN_BUILD="true"
+                CLEAN_OBJ="true"
+                CLEAN_BIN="true"
+                CLEAN_DEPLOYMENT="true"
+                CLEAN_DOCKER="true"
+                CLEAN_LOGS="true"
+                CLEAN_TEMP="true"
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# Validate environment
+validate_environment() {
+    log_info "Validating environment..."
+    
+    # Check if we're in the right directory
+    if [[ ! -f "$PROJECT_ROOT/Versioner.sln" ]]; then
+        log_error "Versioner.sln not found. Please run this script from the project root or scripts directory."
+        exit 1
+    fi
+    
+    log_success "Environment validation passed"
+}
+
+# Clean build outputs
+clean_build() {
+    if [[ "$CLEAN_BUILD" == "true" ]]; then
+        log_info "Cleaning build outputs..."
+        
+        # Clean solution
+        dotnet clean "$PROJECT_ROOT/Versioner.sln" --verbosity minimal
+        
+        if [[ $? -eq 0 ]]; then
+            log_success "Build outputs cleaned"
+        else
+            log_warning "Failed to clean build outputs"
+        fi
+    fi
+}
+
+# Clean obj directories
+clean_obj() {
+    if [[ "$CLEAN_OBJ" == "true" ]]; then
+        log_info "Cleaning obj directories..."
+        
+        local obj_dirs
+        obj_dirs=$(find "$PROJECT_ROOT" -name "obj" -type d)
+        
+        if [[ -n "$obj_dirs" ]]; then
+            echo "$obj_dirs" | xargs rm -rf
+            log_success "obj directories cleaned"
+        else
+            log_info "No obj directories found"
+        fi
+    fi
+}
+
+# Clean bin directories
+clean_bin() {
+    if [[ "$CLEAN_BIN" == "true" ]]; then
+        log_info "Cleaning bin directories..."
+        
+        local bin_dirs
+        bin_dirs=$(find "$PROJECT_ROOT" -name "bin" -type d)
+        
+        if [[ -n "$bin_dirs" ]]; then
+            echo "$bin_dirs" | xargs rm -rf
+            log_success "bin directories cleaned"
+        else
+            log_info "No bin directories found"
+        fi
+    fi
+}
+
+# Clean deployment directory
+clean_deployment() {
+    if [[ "$CLEAN_DEPLOYMENT" == "true" ]]; then
+        log_info "Cleaning deployment directory..."
+        
+        if [[ -d "$PROJECT_ROOT/DEPLOYMENT" ]]; then
+            rm -rf "$PROJECT_ROOT/DEPLOYMENT"
+            log_success "Deployment directory cleaned"
+        else
+            log_info "Deployment directory not found"
+        fi
+    fi
+}
+
+# Clean Docker
+clean_docker() {
+    if [[ "$CLEAN_DOCKER" == "true" ]]; then
+        log_info "Cleaning Docker..."
+        
+        # Check if docker is available
+        if ! command -v docker &> /dev/null; then
+            log_warning "Docker not available, skipping Docker cleanup"
+            return
+        fi
+        
+        # Stop and remove containers
+        local containers
+        containers=$(docker ps -aq -f name=versioner)
+        if [[ -n "$containers" ]]; then
+            log_info "Stopping and removing containers..."
+            echo "$containers" | xargs docker rm -f
+        fi
+        
+        # Remove images
+        local images
+        images=$(docker images -q versioner)
+        if [[ -n "$images" ]]; then
+            log_info "Removing images..."
+            echo "$images" | xargs docker rmi -f
+        fi
+        
+        # Clean up dangling images
+        docker image prune -f
+        
+        log_success "Docker cleaned"
+    fi
+}
+
+# Clean log files
+clean_logs() {
+    if [[ "$CLEAN_LOGS" == "true" ]]; then
+        log_info "Cleaning log files..."
+        
+        # Find and remove log files
+        local log_files
+        log_files=$(find "$PROJECT_ROOT" -name "*.log" -type f)
+        
+        if [[ -n "$log_files" ]]; then
+            echo "$log_files" | xargs rm -f
+            log_success "Log files cleaned"
+        else
+            log_info "No log files found"
+        fi
+    fi
+}
+
+# Clean temporary files
+clean_temp() {
+    if [[ "$CLEAN_TEMP" == "true" ]]; then
+        log_info "Cleaning temporary files..."
+        
+        # Clean .NET temp files
+        local temp_files
+        temp_files=$(find "$PROJECT_ROOT" -name "*.tmp" -o -name "*.temp" -o -name "*.bak" -o -name "*.backup" -type f)
+        
+        if [[ -n "$temp_files" ]]; then
+            echo "$temp_files" | xargs rm -f
+            log_success "Temporary files cleaned"
+        else
+            log_info "No temporary files found"
+        fi
+        
+        # Clean test results
+        if [[ -d "$PROJECT_ROOT/TestResults" ]]; then
+            rm -rf "$PROJECT_ROOT/TestResults"
+            log_success "Test results cleaned"
+        fi
+        
+        # Clean coverage files
+        local coverage_files
+        coverage_files=$(find "$PROJECT_ROOT" -name "*.coverage" -o -name "coverage" -type f)
+        
+        if [[ -n "$coverage_files" ]]; then
+            echo "$coverage_files" | xargs rm -f
+            log_success "Coverage files cleaned"
+        fi
+    fi
+}
+
+# Show cleanup summary
+show_summary() {
+    log_info "Cleanup summary:"
+    echo "  Build outputs: $CLEAN_BUILD"
+    echo "  obj directories: $CLEAN_OBJ"
+    echo "  bin directories: $CLEAN_BIN"
+    echo "  Deployment: $CLEAN_DEPLOYMENT"
+    echo "  Docker: $CLEAN_DOCKER"
+    echo "  Logs: $CLEAN_LOGS"
+    echo "  Temp files: $CLEAN_TEMP"
+}
+
+# Main clean process
+main() {
+    log_info "Starting clean process..."
+    log_info "Project root: $PROJECT_ROOT"
+    log_info "Script directory: $SCRIPT_DIR"
+    
+    # Parse arguments
+    parse_args "$@"
+    
+    # Validate environment
+    validate_environment
+    
+    # Show summary
+    show_summary
+    
+    # Clean build outputs
+    clean_build
+    
+    # Clean obj directories
+    clean_obj
+    
+    # Clean bin directories
+    clean_bin
+    
+    # Clean deployment directory
+    clean_deployment
+    
+    # Clean Docker
+    clean_docker
+    
+    # Clean log files
+    clean_logs
+    
+    # Clean temporary files
+    clean_temp
+    
+    log_success "Clean process completed successfully!"
+}
+
+# Run main function with all arguments
+main "$@"

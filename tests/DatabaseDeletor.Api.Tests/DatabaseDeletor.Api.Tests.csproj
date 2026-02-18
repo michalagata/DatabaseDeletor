@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DatabaseDeletor.Domain\DatabaseDeletor.Domain.csproj" />
+    <ProjectReference Include="..\..\src\DatabaseDeletor.Application\DatabaseDeletor.Application.csproj" />
+    <ProjectReference Include="..\..\src\DatabaseDeletor.Infrastructure\DatabaseDeletor.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\DatabaseDeletor.Api\DatabaseDeletor.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="FluentAssertions" />
+    <Using Include="NSubstitute" />
+  </ItemGroup>
+
+</Project>

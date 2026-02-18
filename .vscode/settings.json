@@ -1,0 +1,42 @@
+{
+    "workbench.colorTheme": "Default Dark Modern",
+    "editor.fontFamily": "SF Mono, Menlo, Monaco, 'Courier New', monospace",
+    "editor.fontSize": 13,
+    "editor.lineHeight": 20,
+    "editor.minimap.enabled": false,
+    "editor.stickyScroll.enabled": true,
+    "window.commandCenter": false,
+    "workbench.activityBar.location": "top",
+    "workbench.statusBar.visible": true,
+    "workbench.sideBar.location": "left",
+    "workbench.editor.showTabs": "multiple",
+    "chat.editor.fontFamily": "SF Mono, Menlo, monospace",
+    "github.copilot.editor.enableAutoCompletions": true,
+    "workbench.colorCustomizations": {
+        "editor.background": "#121212",
+        "sideBar.background": "#121212",
+        "editorGroupHeader.tabsBackground": "#121212",
+        "tab.activeBackground": "#121212",
+        "tab.inactiveBackground": "#121212",
+        "tab.border": "#121212",
+        "editorLineNumber.activeForeground": "#ffffff",
+        "editorLineNumber.foreground": "#444444"
+    },
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "match": ".*",
+                "cmd": "bash .tools/update_context.sh"
+            },
+            {
+                "match": ".memory/workflows.json",
+                "cmd": "python3 .tools/gen_prompts.py"
+            },
+            {
+                "match": ".cursor/.*\\.mdc",
+                "cmd": "python3 .tools/compile_mdc.py"
+            }
+        ]
+    }
+}

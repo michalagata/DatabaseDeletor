@@ -1,0 +1,710 @@
+# Versioner Scripts
+
+This directory contains all build, deployment, and utility scripts for the Versioner application.
+
+## Available Scripts
+
+### Build Scripts
+- **`_performBuildDocker.sh`** - Docker build script (builds solution + Docker image)
+- **`build-linux.sh`** - Linux build script for .NET application
+- **`build-windows.sh`** - Windows build script for .NET application
+- (replaced) Use `_performBuildDocker.sh`
+- **`_dockerRun.sh`** - Docker container run script
+
+### Dotnet Tool Scripts
+- **`publish-tool.sh`** - Complete dotnet tool release: compile, publish, pack, and release to NuGet feed
+
+### Versioning Scripts
+- **`version.sh`** - Version project files using Versioner
+- **`version-artifacts.sh`** - Version artifacts script (enhanced)
+- **`universal-version-artifacts.sh`** - Universal versioning script for any .NET project
+- **`push.sh`** - Git push with automatic commit message
+- **`git-push.sh`** - Git push script (enhanced)
+
+### Utility Scripts
+- **`clean.sh`** - Clean build outputs and temporary files
+- **`install.sh`** - Install Versioner to local directory
+- **`publish-local.sh`** - Local publish script (enhanced)
+
+## Quick Start
+
+### 1. Build the Application
+```bash
+# Build for Linux
+./scripts/build-linux.sh
+
+# Build for Windows
+./scripts/build-windows.sh
+
+# Build Docker (builds solution + Docker image)
+./scripts/_performBuildDocker.sh
+
+# Build with custom configuration
+./scripts/build-linux.sh -c Debug -o /tmp/versioner
+```
+
+### 2. Build Docker Image
+```bash
+# Build Docker image
+# replaced by _performBuildDocker.sh
+
+# Build and push to registry
+./scripts/_performBuildDocker.sh -r registry.example.com --push
+
+# Build for specific platform
+./scripts/_performBuildDocker.sh -p linux/arm64
+```
+
+### 3. Run with Docker
+```bash
+# Run Versioner help
+./scripts/_dockerRun.sh
+
+# Version a project
+./scripts/_dockerRun.sh --workspace /path/to/project --usedefaults
+
+# Interactive mode
+./scripts/_dockerRun.sh --interactive
+```
+
+### 4. Version Projects
+```bash
+# Version current project
+./scripts/version.sh
+
+# Version specific project
+./scripts/version.sh -w /path/to/project -d
+
+# Version with custom config
+./scripts/version.sh -c custom-config.json -s
+
+# Version artifacts (enhanced)
+./scripts/version-artifacts.sh -w /path/to/project -d
+
+# Universal versioning (works with any .NET project)
+./scripts/universal-version-artifacts.sh -w=/path/to/any/dotnet/project -s
+
+# Universal versioning with global enforcement (version both .csproj and .props)
+./scripts/universal-version-artifacts.sh -w=/path/to/project -s -j
+```
+
+### 5. Git Operations
+```bash
+# Push with auto-generated message
+./scripts/push.sh
+
+# Push with custom message
+./scripts/push.sh -m "Fix versioning bug"
+
+# Push specific branch
+./scripts/push.sh -b main -r upstream
+
+# Enhanced git push
+./scripts/git-push.sh -m "Update versioning" -t
+```
+
+### 6. Clean Up
+```bash
+# Clean build outputs
+./scripts/clean.sh
+
+# Clean everything including Docker
+./scripts/clean.sh --all
+
+# Clean specific items
+./scripts/clean.sh --docker --deployment
+```
+
+### 7. Install and Publish
+```bash
+# Install Versioner locally
+./scripts/install.sh
+
+# Publish locally (build + install)
+./scripts/publish-local.sh
+
+# Install to custom directory
+./scripts/install.sh -d /custom/path -f
+```
+
+### 8. Build and Publish Dotnet Tool
+```bash
+# Build, pack, and publish to nuget.org (requires NUGET_API_KEY env var)
+./scripts/publish-tool.sh
+
+# Publish to custom feed
+./scripts/publish-tool.sh --feed https://api.example.com/v3/index.json --api-key YOUR_KEY
+
+# Build and pack only (skip publishing)
+./scripts/publish-tool.sh --skip-publish
+
+# Build Debug configuration
+./scripts/publish-tool.sh -c Debug --skip-publish
+
+# Install locally built package as global tool
+./scripts/publish-tool.sh --skip-publish
+dotnet tool install --global --add-source DEPLOYMENT/nupkg Versioner.Cli
+
+# Install from nuget.org (after publishing)
+dotnet tool install --global Versioner.Cli
+```
+
+## Script Details
+
+### Universal Scripts
+
+#### `universal-version-artifacts.sh`
+Universal versioning script that works with any .NET project in any repository.
+
+**Features:**
+- Auto-detects Versioner installation by looking for `Cli/Versioner.Cli.csproj`
+- Works with any .NET project
+- Cross-platform compatibility
+- Uses `dotnet run --project Cli/Versioner.Cli.csproj` for execution
+- Comprehensive error handling and logging
+- Supports both `-w=/path` and `-w /path` argument formats
+
+**Usage:**
+```bash
+# Basic usage
+./scripts/universal-version-artifacts.sh
+
+# Version specific project
+./scripts/universal-version-artifacts.sh -w=/path/to/project -s
+
+# Debug mode
+./scripts/universal-version-artifacts.sh -l=D -w=/path/to/project
+
+# Use specific Versioner installation
+./scripts/universal-version-artifacts.sh -v=/path/to/versioner
+
+# Disable backup cleanup
+./scripts/universal-version-artifacts.sh -w=/path/to/project -c=false
+
+# Enable global versioning (version both .csproj and .props files)
+./scripts/universal-version-artifacts.sh -w=/path/to/project -s -j
+
+# Combine multiple options
+./scripts/universal-version-artifacts.sh -w=/path/to/project -l=D -s -j -c
+```
+
+**Auto-detection:**
+The script automatically searches for Versioner in:
+1. VERSIONER_DIR environment variable
+2. Current directory (looking for `Cli/Versioner.Cli.csproj`)
+3. Parent directories (recursive search)
+4. ./versioner/ directory
+5. ../versioner/ directory
+6. ~/.local/bin/versioner/
+7. /usr/local/bin/versioner/
+8. /opt/versioner/
+
+**Environment Variables:**
+- `VERSIONER_DIR` - Versioner installation directory
+- `WORKING_DIR` - Working directory
+- `LOG_LEVEL` - Log level (V|D|I|W|E|F)
+- `STORE_VERSION_FILE` - Store version file flag
+- `USE_DEFAULTS` - Use defaults flag
+- `CLEANUP_BACKUPS` - Cleanup backups flag
+
+### _performBuildDocker.sh
+ Docker build script that builds the solution for Linux first, then builds Docker image.
+
+**Features:**
+- Builds solution for Linux first
+- Multi-platform Docker builds
+- Registry support
+- Image tagging
+- Automatic cleanup
+- Size optimization
+- Docker labels support
+- Build arguments support
+- Auto-tagging with version from version.txt
+
+**Usage:**
+```bash
+./scripts/_performBuildDocker.sh [OPTIONS]
+
+OPTIONS:
+    -n, --name NAME           Image name
+    -t, --tag TAG             Image tag
+    -r, --registry REGISTRY   Docker registry URL
+    -p, --platform PLATFORM  Target platform
+    --push                    Push image to registry
+    --label KEY=VALUE         Add Docker label (can be used multiple times)
+    --build-arg KEY=VALUE     Add Docker build argument (can be used multiple times)
+    --no-auto-tag             Disable automatic version tagging from version.txt
+    -h, --help                Show help
+```
+
+**Examples:**
+```bash
+# Basic Docker build
+./scripts/_performBuildDocker.sh
+
+# Build with custom name and tag
+./scripts/_performBuildDocker.sh -n my-versioner -t v1.0.0
+
+# Build and push to registry
+./scripts/_performBuildDocker.sh -r registry.example.com --push
+
+# Build with Docker labels and build arguments
+./scripts/_performBuildDocker.sh \
+  --label "version=1.0.0" \
+  --label "build-date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --build-arg "BUILD_NUMBER=123" \
+  --build-arg "GIT_COMMIT=abc123"
+
+# Build with auto-tagging disabled
+./scripts/_performBuildDocker.sh --no-auto-tag
+
+# Multi-platform build with labels
+./scripts/_performBuildDocker.sh \
+  -p linux/amd64,linux/arm64 \
+  --label "platform=multi" \
+  --push
+```
+
+### _dockerRun.sh
+ Docker container run script.
+
+**Features:**
+- Multi-platform builds
+- Registry support
+- Image tagging
+- Automatic cleanup
+- Size optimization
+
+**Usage:**
+```bash
+./scripts/_dockerRun.sh [OPTIONS]
+
+OPTIONS:
+    -n, --name NAME           Image name
+    -t, --tag TAG             Image tag
+    -r, --registry REGISTRY   Docker registry URL
+    -p, --platform PLATFORM  Target platform
+    --push                    Push image to registry
+    -h, --help                Show help
+```
+
+### docker-run.sh
+Docker container run script.
+
+**Features:**
+- Volume mounting
+- Environment configuration
+- Interactive mode
+- Background execution
+- Health checks
+
+**Usage:**
+```bash
+./scripts/docker-run.sh [OPTIONS] [VERSIONER_ARGS...]
+
+OPTIONS:
+    -n, --name NAME           Container name
+    -i, --image IMAGE         Docker image
+    -w, --workspace DIR       Workspace directory
+    -o, --output DIR          Output directory
+    -c, --config DIR          Config directory
+    -d, --detach              Run in background
+    --rm                      Remove container after exit
+    --interactive             Run in interactive mode
+    -h, --help                Show help
+```
+
+### version.sh
+Version project files using Versioner.
+
+**Features:**
+- Git repository validation
+- Configuration file support
+- Log level control
+- Version file generation
+- Automatic Versioner detection
+
+**Usage:**
+```bash
+./scripts/version.sh [OPTIONS]
+
+OPTIONS:
+    -w, --working-dir DIR     Working directory
+    -c, --config FILE         Configuration file
+    -l, --log-level LEVEL     Log level
+    -s, --store-version       Store version in version.txt
+    -d, --use-defaults        Use default settings
+    -h, --help                Show help
+```
+
+### push.sh
+Git push with automatic commit message.
+
+**Features:**
+- Automatic commit message generation
+- Branch and remote support
+- Tag pushing
+- Force push option
+- Status validation
+
+**Usage:**
+```bash
+./scripts/push.sh [OPTIONS]
+
+OPTIONS:
+    -m, --message MESSAGE     Commit message
+    -b, --branch BRANCH       Branch to push
+    -r, --remote REMOTE       Remote repository
+    -t, --tags                Push tags
+    -f, --force               Force push
+    -h, --help                Show help
+```
+
+### build-linux.sh
+Linux build script for .NET application.
+
+**Features:**
+- Linux-specific build
+- Self-contained deployment
+- Package creation
+- Enhanced reporting
+- Environment validation
+
+**Usage:**
+```bash
+./scripts/build-linux.sh [OPTIONS]
+
+OPTIONS:
+    -c, --config CONFIG        Build configuration (Debug|Release)
+    -o, --output DIR           Output directory
+    -h, --help                 Show help
+```
+
+### build-windows.sh
+Windows build script for .NET application.
+
+**Features:**
+- Windows-specific build
+- Cross-platform build on macOS/Linux
+- Self-contained deployment
+- Package creation
+- Enhanced reporting
+
+**Usage:**
+```bash
+./scripts/build-windows.sh [OPTIONS]
+
+OPTIONS:
+    -c, --config CONFIG        Build configuration (Debug|Release)
+    -o, --output DIR           Output directory
+    -h, --help                 Show help
+```
+
+### version-artifacts.sh
+Enhanced version artifacts script.
+
+**Features:**
+- Git repository validation
+- Enhanced reporting
+- Backup file cleanup
+- Version information display
+- Automatic Versioner detection
+
+**Usage:**
+```bash
+./scripts/version-artifacts.sh [OPTIONS]
+
+OPTIONS:
+    -w, --working-dir DIR     Working directory
+    -l, --log-level LEVEL     Log level
+    -s, --store-version       Store version in version.txt
+    -d, --use-defaults        Use default settings
+    -h, --help                Show help
+```
+
+### git-push.sh
+Enhanced Git push script.
+
+**Features:**
+- Enhanced reporting
+- Automatic commit message generation
+- Branch and remote support
+- Tag pushing
+- Force push option
+- Status validation
+
+**Usage:**
+```bash
+./scripts/git-push.sh [OPTIONS]
+
+OPTIONS:
+    -m, --message MESSAGE     Commit message
+    -b, --branch BRANCH       Branch to push
+    -r, --remote REMOTE       Remote repository
+    -t, --tags                Push tags
+    -f, --force               Force push
+    -h, --help                Show help
+```
+
+### install.sh
+Install Versioner to local directory.
+
+**Features:**
+- Local installation
+- Build detection
+- Force installation option
+- Enhanced reporting
+- Verification
+
+**Usage:**
+```bash
+./scripts/install.sh [OPTIONS]
+
+OPTIONS:
+    -d, --dir DIR             Installation directory
+    -f, --force               Force installation (overwrite existing)
+    -b, --build               Build before installing
+    -h, --help                Show help
+```
+
+### publish-local.sh
+Enhanced local publish script.
+
+**Features:**
+- Build and install
+- Enhanced reporting
+- Target directory management
+- Package verification
+- Detailed deployment report
+
+**Usage:**
+```bash
+./scripts/publish-local.sh [OPTIONS]
+
+OPTIONS:
+    -t, --target DIR          Target directory
+    -f, --force               Force installation (overwrite existing)
+    -b, --build               Build before publishing
+    -h, --help                Show help
+```
+
+### clean.sh
+Clean build outputs and temporary files.
+
+**Features:**
+- Selective cleaning
+- Docker cleanup
+- Log file removal
+- Temporary file cleanup
+- Safe operation
+
+**Usage:**
+```bash
+./scripts/clean.sh [OPTIONS]
+
+OPTIONS:
+    --no-build         Don't clean build outputs
+    --no-obj           Don't clean obj directories
+    --no-bin           Don't clean bin directories
+    --deployment        Clean deployment directory
+    --docker           Clean Docker images and containers
+    --logs             Clean log files
+    --temp             Clean temporary files
+    -a, --all          Clean everything
+    -h, --help         Show help
+```
+
+### publish-tool.sh
+Complete dotnet tool release process: compile, publish, pack, and release to NuGet feed.
+
+**Features:**
+- Compiles the CLI project
+- Publishes the application
+- Packages as dotnet tool (.nupkg)
+- Publishes to NuGet feed (nuget.org by default or custom feed)
+- Cross-platform support (Windows, Linux, macOS)
+- Configurable build configuration
+- API key support (command line or environment variable)
+- Skip publish option for testing
+
+**Usage:**
+```bash
+./scripts/publish-tool.sh [OPTIONS]
+
+OPTIONS:
+    -c, --config CONFIG     Build configuration (Debug|Release) [default: Release]
+    -f, --feed URL          NuGet feed URL [default: https://api.nuget.org/v3/index.json]
+    -k, --api-key KEY       API key for NuGet feed authentication
+    --skip-publish          Skip publishing to feed (only build and pack)
+    --clean                 Clean build directories before building
+    --skip-restore          Skip dotnet restore
+    -h, --help              Show help message
+```
+
+**Environment Variables:**
+- `NUGET_API_KEY` - API key for NuGet feed (alternative to --api-key)
+
+**Examples:**
+```bash
+# Build and publish to nuget.org (requires NUGET_API_KEY env var)
+export NUGET_API_KEY=your_api_key_here
+./scripts/publish-tool.sh
+
+# Publish to custom feed
+./scripts/publish-tool.sh --feed https://api.example.com/v3/index.json --api-key YOUR_KEY
+
+# Build and pack only (skip publishing)
+./scripts/publish-tool.sh --skip-publish
+
+# Build Debug configuration
+./scripts/publish-tool.sh -c Debug --skip-publish
+
+# Clean build and publish
+./scripts/publish-tool.sh --clean
+```
+
+**Output:**
+- Creates `.nupkg` file in `DEPLOYMENT/nupkg/` directory
+- Publishes package to specified NuGet feed
+- Package can be installed using `dotnet tool install Versioner.Cli` (after publishing to nuget.org)
+- For local installation: `dotnet tool install --global --add-source DEPLOYMENT/nupkg Versioner.Cli`
+
+## Environment Variables
+
+All scripts support environment variables for configuration:
+
+### Build Script
+- `BUILD_CONFIG` - Build configuration
+- `RUNTIME` - Target runtime
+- `SELF_CONTAINED` - Self-contained flag
+- `OUTPUT_DIR` - Output directory
+
+### Docker Scripts
+- `IMAGE_NAME` - Docker image name
+- `IMAGE_TAG` - Docker image tag
+- `REGISTRY` - Docker registry URL
+- `PLATFORM` - Target platform
+- `PUSH` - Push flag
+
+### Version Script
+- `WORKING_DIR` - Working directory
+- `CONFIG_FILE` - Configuration file
+- `LOG_LEVEL` - Log level
+- `STORE_VERSION_FILE` - Store version file flag
+- `USE_DEFAULTS` - Use defaults flag
+
+### Push Script
+- `COMMIT_MESSAGE` - Commit message
+- `BRANCH` - Branch to push
+- `REMOTE` - Remote repository
+- `PUSH_TAGS` - Push tags flag
+- `FORCE` - Force push flag
+
+### Clean Script
+- `CLEAN_BUILD` - Clean build outputs
+- `CLEAN_OBJ` - Clean obj directories
+- `CLEAN_BIN` - Clean bin directories
+- `CLEAN_DEPLOYMENT` - Clean deployment directory
+- `CLEAN_DOCKER` - Clean Docker
+- `CLEAN_LOGS` - Clean logs
+- `CLEAN_TEMP` - Clean temp files
+
+## Examples
+
+### Complete Build and Deploy Workflow
+```bash
+# 1. Clean previous builds
+./scripts/clean.sh --all
+
+# 2. Build the application
+./scripts/build.sh -c Release -r linux-x64
+
+# 3. Build Docker image
+./scripts/docker-build.sh -n versioner -t v1.0.0
+
+# 4. Test with Docker
+./scripts/docker-run.sh --workspace /path/to/test/project --usedefaults
+
+# 5. Version a project
+./scripts/version.sh -w /path/to/project -d -s
+
+# 6. Commit and push changes
+./scripts/push.sh -m "Version project files"
+```
+
+### CI/CD Pipeline Example
+```bash
+#!/bin/bash
+set -e
+
+# Build and test
+./scripts/build.sh -c Release
+./scripts/docker-build.sh -n versioner -t $BUILD_NUMBER
+
+# Deploy to staging
+./scripts/docker-run.sh -d --workspace /staging/project --usedefaults
+
+# If successful, deploy to production
+if [ $? -eq 0 ]; then
+    ./scripts/docker-run.sh -d --workspace /production/project --usedefaults
+    ./scripts/push.sh -m "Deploy to production"
+fi
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Permission Denied**
+   ```bash
+   chmod +x scripts/*.sh
+   ```
+
+2. **Docker Not Found**
+   ```bash
+   # Install Docker or check PATH
+   which docker
+   ```
+
+3. **Git Repository Not Found**
+   ```bash
+   # Initialize git repository
+   git init
+   ```
+
+4. **Versioner Not Found**
+   ```bash
+   # Build the application first
+   ./scripts/build.sh
+   ```
+
+### Debug Mode
+
+Most scripts support verbose output:
+```bash
+# Enable debug logging
+export LOG_LEVEL=Debug
+./scripts/version.sh
+```
+
+### Log Files
+
+Scripts create log files in the project root:
+- `build.log` - Build process logs
+- `docker.log` - Docker operation logs
+- `version.log` - Versioning operation logs
+
+## Contributing
+
+When adding new scripts:
+
+1. Follow the existing naming convention
+2. Include help documentation
+3. Support environment variables
+4. Add proper error handling
+5. Include logging functions
+6. Test on both Linux and macOS
+
+## License
+
+This project is licensed under the LGPL-3.0-or-later license.
