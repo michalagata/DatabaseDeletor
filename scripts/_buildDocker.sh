@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# Docker build script for Versioner application
+# Docker build script for DatabaseDeletor application
 # Builds solution for Linux first, then builds Docker container
 
 set -Eeuo pipefail
@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-IMAGE_NAME="${IMAGE_NAME:-versioner}"
+IMAGE_NAME="${IMAGE_NAME:-database-deletor}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 REGISTRY="${REGISTRY:-}"
 PLATFORM="${PLATFORM:-linux/amd64}"
@@ -50,12 +50,12 @@ log_header() {
 # Help function
 show_help() {
     cat << EOF
-Versioner Docker Build Script (universal). Use _performBuildDocker.sh name after rename.
+DatabaseDeletor Docker Build Script (universal). Use _performBuildDocker.sh name after rename.
 
 Usage: $0 [OPTIONS]
 
 OPTIONS:
-    -n, --name NAME           Image name [default: versioner]
+    -n, --name NAME           Image name [default: database-deletor]
     -t, --tag TAG             Image tag [default: latest]
     -r, --registry REGISTRY   Docker registry URL
     -p, --platform PLATFORM  Target platform [default: linux/amd64]
@@ -63,8 +63,8 @@ OPTIONS:
     -h, --help                Show this help message
 
 EXAMPLES:
-    $0                                    # Build versioner:latest
-    $0 -n my-versioner -t v1.0.0         # Build my-versioner:v1.0.0
+    $0                                    # Build database-deletor:latest
+    $0 -n my-database-deletor -t v1.0.0         # Build my-database-deletor:v1.0.0
     $0 -r registry.example.com --push    # Build and push to registry
 
 ENVIRONMENT VARIABLES:
@@ -252,7 +252,7 @@ cleanup_old_images() {
 
 # Main build process
 main() {
-    log_header "🚀 VERSIONER DOCKER BUILD SCRIPT 🚀"
+    log_header "🚀 DATABASEDELETOR DOCKER BUILD SCRIPT 🚀"
     echo -e "${WHITE}Project Root: ${CYAN}$PROJECT_ROOT${NC}"
     echo -e "${WHITE}Script Directory: ${CYAN}$SCRIPT_DIR${NC}"
     echo -e "${WHITE}Image: ${CYAN}$IMAGE_NAME:$IMAGE_TAG${NC}"

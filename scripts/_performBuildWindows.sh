@@ -44,7 +44,7 @@ elif [[ "${OUTPUT_DIR}" == ../* ]]; then
 elif [[ "${OUTPUT_DIR}" != /* ]]; then
     OUTPUT_DIR="$PROJECT_ROOT/${OUTPUT_DIR}"
 fi
-BUILD_DIR="$OUTPUT_DIR/net8.0"
+BUILD_DIR="$OUTPUT_DIR/net10.0"
 OUTPUT_ZIP="$OUTPUT_DIR/${SOLUTION_NAME}.Windows.zip"
 PLATFORM="windows"
 
@@ -54,7 +54,7 @@ while [[ $# -gt 0 ]]; do
     -c|--config)
       BUILD_CONFIG="$2"; shift 2 ;;
     -o|--output)
-      OUTPUT_DIR="$2"; BUILD_DIR="$OUTPUT_DIR/net8.0"; OUTPUT_ZIP="$OUTPUT_DIR/${SOLUTION_NAME}.Windows.zip"; shift 2 ;;
+      OUTPUT_DIR="$2"; BUILD_DIR="$OUTPUT_DIR/net10.0"; OUTPUT_ZIP="$OUTPUT_DIR/${SOLUTION_NAME}.Windows.zip"; shift 2 ;;
     -h|--help)
       echo "Usage: $0 [-c Release|Debug] [-o OUTPUT_DIR]"; exit 0 ;;
     *) echo "Unknown option: $1"; exit 1;;

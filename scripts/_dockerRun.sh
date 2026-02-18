@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# Docker run script for Versioner application
+# Docker run script for DatabaseDeletor application
 
 set -Eeuo pipefail
 IFS=$'\n\t'
@@ -14,9 +14,9 @@ NC='\033[0m' # No Color
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-IMAGE_NAME="${IMAGE_NAME:-versioner}"
+IMAGE_NAME="${IMAGE_NAME:-database-deletor}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
-CONTAINER_NAME="${CONTAINER_NAME:-versioner-container}"
+CONTAINER_NAME="${CONTAINER_NAME:-database-deletor-container}"
 WORKSPACE_DIR="${WORKSPACE_DIR:-$PROJECT_ROOT/workspace}"
 OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_ROOT/output}"
 CONFIG_DIR="${CONFIG_DIR:-$PROJECT_ROOT/config}"
@@ -41,13 +41,13 @@ log_error() {
 # Help function
 show_help() {
     cat << EOF
-Versioner Docker Run Script
+DatabaseDeletor Docker Run Script
 
-Usage: $0 [OPTIONS] [VERSIONER_ARGS...]
+Usage: $0 [OPTIONS] [DELETOR_ARGS...]
 
 OPTIONS:
-    -n, --name NAME           Container name [default: versioner-container]
-    -i, --image IMAGE         Docker image [default: versioner:latest]
+    -n, --name NAME           Container name [default: database-deletor-container]
+    -i, --image IMAGE         Docker image [default: database-deletor:latest]
     -w, --workspace DIR       Workspace directory [default: ./workspace]
     -o, --output DIR          Output directory [default: ./output]
     -c, --config DIR          Config directory [default: ./config]
@@ -56,11 +56,11 @@ OPTIONS:
     --interactive             Run in interactive mode
     -h, --help                Show this help message
 
-VERSIONER_ARGS:
-    Any arguments passed after options will be forwarded to Versioner CLI
+DELETOR_ARGS:
+    Any arguments passed after options will be forwarded to DatabaseDeletor CLI
 
 EXAMPLES:
-    $0 --help                                    # Show Versioner help
+    $0 --help                                    # Show DatabaseDeletor help
     $0 --workspace /path/to/project --usedefaults # Version a project
     $0 -d --workspace /path/to/project            # Run in background
     $0 --interactive                              # Interactive mode
@@ -80,7 +80,7 @@ parse_args() {
     DETACH=false
     REMOVE=false
     INTERACTIVE=false
-    VERSIONER_ARGS=()
+    DELETOR_ARGS=()
     
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -126,7 +126,7 @@ parse_args() {
                 exit 1
                 ;;
             *)
-                VERSIONER_ARGS+=("$1")
+                DELETOR_ARGS+=("$1")
                 shift
                 ;;
         esac
@@ -185,7 +185,7 @@ stop_existing_container() {
 
 # Run container
 run_container() {
-    log_info "Running Versioner container..."
+    log_info "Running DatabaseDeletor container..."
     log_info "Container: $CONTAINER_NAME"
     log_info "Image: $IMAGE_NAME:$IMAGE_TAG"
     log_info "Workspace: $WORKSPACE_DIR"
@@ -235,9 +235,9 @@ run_container() {
     # Add image name
     docker_cmd+=("$IMAGE_NAME:$IMAGE_TAG")
     
-    # Add Versioner arguments
-    if [[ ${#VERSIONER_ARGS[@]} -gt 0 ]]; then
-        docker_cmd+=("${VERSIONER_ARGS[@]}")
+    # Add DatabaseDeletor arguments
+    if [[ ${#DELETOR_ARGS[@]} -gt 0 ]]; then
+        docker_cmd+=("${DELETOR_ARGS[@]}")
     else
         docker_cmd+=(--help)
     fi
@@ -273,7 +273,7 @@ show_status() {
 
 # Main run process
 main() {
-    log_info "Starting Versioner Docker run process..."
+    log_info "Starting DatabaseDeletor Docker run process..."
     log_info "Project root: $PROJECT_ROOT"
     log_info "Script directory: $SCRIPT_DIR"
     
@@ -284,7 +284,7 @@ main() {
     if [[ "${1:-}" == "--build" ]]; then
         build_image "$1"
         shift
-        VERSIONER_ARGS=("$@")
+        DELETOR_ARGS=("$@")
     fi
     
     # Validate environment
@@ -304,9 +304,9 @@ main() {
     show_status
     
     if [[ $exit_code -eq 0 ]]; then
-        log_success "Versioner Docker run process completed successfully!"
+        log_success "DatabaseDeletor Docker run process completed successfully!"
     else
-        log_error "Versioner Docker run process failed with exit code: $exit_code"
+        log_error "DatabaseDeletor Docker run process failed with exit code: $exit_code"
     fi
     
     exit $exit_code

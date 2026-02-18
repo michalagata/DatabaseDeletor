@@ -196,7 +196,7 @@ get_version() {
 }
 
 # Configuration
-readonly IMAGE_NAME="${IMAGE_NAME:-anonymizer}"
+readonly IMAGE_NAME="${IMAGE_NAME:-database-deletor}"
 VERSION=$(get_version)
 readonly VERSION
 readonly GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")

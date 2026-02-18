@@ -2,7 +2,13 @@
 
   <PropertyGroup>
     <RootNamespace>DatabaseDeletor.Api</RootNamespace>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DatabaseDeletor.Api.Tests" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" />
@@ -11,6 +17,7 @@
     <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="Serilog.Formatting.Compact" />
     <PackageReference Include="Serilog.Enrichers.Environment" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />

@@ -76,3 +76,59 @@
 - Files: scripts/build.sh, scripts/push.sh, DOCKER_IMAGE, .dockerignore, docker/Dockerfile (created), README.md (created)
 - Result: Build 0 warnings 0 errors, 154 tests passing
 - Decision: Multi-stage Dockerfile with non-root user, linux/amd64 target
+
+## [2026-02-18 17:00] Step: Fix legacy naming references in scripts
+- Action: Applied sed replacements to rename versioner/anonymizer -> database-deletor/DatabaseDeletor in 6 target script files
+- Files: scripts/_buildDocker.sh, scripts/_performBuildDocker.sh, scripts/_versionDocker.sh, scripts/_dockerRun.sh, scripts/_buildBaseDocker.sh, scripts/_fullSystemStartOrRestart.sh
+- Result: All 6 target files verified clean. Only legitimate Versioner tool references remain in _versionDocker.sh.
+- Decision: External Versioner tool references (detect_versioner, run_versioner_for_docker, Versioner.Cli.csproj paths) are intentionally preserved as they refer to a separate tool, not the project name.
+
+## [2026-02-18 18:00] Session 5: Production-Readiness Plan Implementation
+- Task: Implement all 7 groups from the production-readiness plan
+
+## [2026-02-18 18:01] GROUP A: MSBuild / Packaging Foundation
+- Action: Added SelfContained=true + PublishSingleFile=false to csproj files, fixed _common.sh (self_contained default, TFM, missing functions), fixed net8.0→net10.0 in all build scripts, fixed macOS script (unit tests, dynamic project name), fixed publish-local.sh
+- Files: 2 csproj files, _common.sh, 4 build scripts
+- Result: Build 0 warnings, 0 errors, 154 tests passing
+
+## [2026-02-18 18:10] GROUP B: API Feature Toggles + AppSettings Validation
+- Action: Created FeatureToggles, AppSettingsValidator, NoExternalCommunicationHandler. Rewrote Program.cs with OpenTelemetry, feature toggles, Serilog. Updated appsettings.json. Added Serilog.Settings.Configuration to CPM.
+- Files: 3 new .cs files, Program.cs rewritten, appsettings.json updated, Directory.Packages.props updated, Api.csproj updated
+- Result: Build 0 warnings, 0 errors
+
+## [2026-02-18 18:20] GROUP C: AI/LLM Infrastructure
+- Action: Created domain interfaces (IInferenceService, ITrainingService), AiOptions, 4 skeleton service implementations with LoggerMessage pattern, DependencyInjection extension
+- Files: 8 new .cs files
+- Result: Build 0 warnings, 0 errors
+
+## [2026-02-18 18:30] GROUP D: Script Fixes
+- Action: Fixed legacy versioner/anonymizer references across 6 Docker/version scripts
+- Files: 6 script files
+- Result: All scripts updated
+
+## [2026-02-18 18:35] GROUP E: Dockerfile Updates
+- Action: Rewrote Dockerfile for self-contained deployment (runtime-deps base, native executables, chmod +x)
+- Files: docker/Dockerfile
+- Result: Dockerfile updated
+
+## [2026-02-18 18:40] GROUP F: Test Expansion
+- Action: Created 9 new test files with 49 new tests (7 DeletionService, 6 ConsoleRenderer, 3 HealthCheck, 3 Swagger, 6 FeatureToggle, 3 Startup, 5 AppSettingsValidator, 6 ColumnInfo, 10 ForeignKeyInfo). Fixed ISqlParser.ParsedQuery → ParsedQuery, fixed Program accessibility for WebApplicationFactory.
+- Files: 9 new test files, Program.cs (public partial class), DeletionServiceTests.cs (ParsedQuery fix)
+- Result: 203 tests all passing (70 Domain + 36 Application + 64 Infrastructure + 13 CLI + 20 API)
+
+## [2026-02-18 18:50] GROUP G: Final Verification
+- Action: Release build (0W 0E), Release tests (203 pass), cross-platform publish (linux-x64, osx-arm64, win-x64), README.md updated
+- Files: README.md
+- Result: All verification gates passed
+
+## [2026-02-18 19:00] Step 10: Remove AI/ML Infrastructure
+- Action: Analyzed AI/ML usage — zero consumers, AddInfrastructureAI() never called, all services throw NotImplementedException. Removed entire Infrastructure.AI project from .sln, deleted all source files, deleted domain interfaces (IInferenceService, ITrainingService).
+- Files: DatabaseDeletor.sln (edited), src/DatabaseDeletor.Infrastructure.AI/ (deleted), src/DatabaseDeletor.Domain/Interfaces/IInferenceService.cs (deleted), src/DatabaseDeletor.Domain/Interfaces/ITrainingService.cs (deleted)
+- Result: Build 0W 0E, 203 tests passing. Clean removal confirmed.
+- Decision: ADR-005 updated — AI/ML not needed for deterministic database deletion tool
+
+## [2026-02-18 19:10] Step 11: README.md Rewrite — Product Guide + AI Removal
+- Action: Rewrote README.md to (1) remove all AI/ML references from features, projects table, dedicated section, and project structure, (2) add comprehensive "Product Guide" section with SQL query syntax, table name formats, connection strings per provider, 5 real-world CLI examples, batch size tuning table, provider-specific deletion strategies, WHERE clause behavior, logging, and REST API usage
+- Files: README.md (rewritten)
+- Result: Build 0W 0E, 203 tests passing. README now 9 projects (5 src + 4 test) instead of 11.
+- Decision: Product guide covers DELETE FROM and SELECT FROM syntax, 4 providers, all CLI options with examples

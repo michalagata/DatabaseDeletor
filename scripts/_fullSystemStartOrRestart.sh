@@ -105,8 +105,8 @@ display_error_summary() {
 trap 'EXIT_CODE=$?; display_error_summary; exit $EXIT_CODE' EXIT
 
 # Configuration
-IMAGE_NAME="${IMAGE_NAME:-anonymizer}"
-BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-anonymizer-base}"
+IMAGE_NAME="${IMAGE_NAME:-database-deletor}"
+BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-database-deletor-base}"
 BASE_IMAGE_TAG="${BASE_IMAGE_TAG:-10.0}"
 PLATFORM="${PLATFORM:-linux/amd64}"
 
@@ -225,7 +225,7 @@ fi
 # Clean up orphaned networks (fixes "network not found" errors)
 info "Cleaning up orphaned Docker networks..."
 # First, try to remove project-specific networks
-PROJECT_NETWORKS=$(docker network ls --filter "name=anonymizer" --format "{{.ID}}" 2>/dev/null || true)
+PROJECT_NETWORKS=$(docker network ls --filter "name=database-deletor" --format "{{.ID}}" 2>/dev/null || true)
 if [[ -n "$PROJECT_NETWORKS" ]]; then
     info "Found project networks to clean up..."
     while IFS= read -r network_id; do
@@ -349,8 +349,8 @@ if [[ "$NEEDS_CLEANUP" == "true" ]]; then
     # Remove all unused networks
     docker network prune -f 2>/dev/null || true
     
-    # Remove all unused images (except anonymizer and anonymizer-base)
-    info "Removing unused images (keeping anonymizer and anonymizer-base)..."
+    # Remove all unused images (except database-deletor and database-deletor-base)
+    info "Removing unused images (keeping database-deletor and database-deletor-base)..."
     docker image prune -f 2>/dev/null || true
     
     # Remove build cache (most important for freeing space)
@@ -506,7 +506,7 @@ fi
 
 # Build test project on host
 # CRITICAL: Use absolute path to test project (works both on host and in container)
-TEST_PROJECT_PATH="$PROJECT_ROOT/Tests/Anonymizer.Api.Tests/Anonymizer.Api.Tests.csproj"
+TEST_PROJECT_PATH="$PROJECT_ROOT/Tests/tests/DatabaseDeletor.Api.Tests/DatabaseDeletor.Api.Tests.csproj"
 TEST_OUTPUT_DIR="$PROJECT_ROOT/bin/test-publish/linux-x64"
 
 # Verify test project exists
@@ -533,7 +533,7 @@ if dotnet publish "$TEST_PROJECT_PATH" \
     info "Test binaries are ready for Docker build (in bin/test-publish/linux-x64/)"
     
     # Verify that DLL was created
-    if [[ -f "$TEST_OUTPUT_DIR/Anonymizer.Api.Tests.dll" ]]; then
+    if [[ -f "$TEST_OUTPUT_DIR/DatabaseDeletor.Api.Tests.dll" ]]; then
         success "Test DLL found in $TEST_OUTPUT_DIR/"
     else
         warning "Test DLL not found after publish - checking what was created..."
@@ -629,13 +629,13 @@ done
 if [[ $READY_WAIT_COUNT -ge $MAX_READY_WAIT ]]; then
     warning "API did not become ready within ${MAX_READY_WAIT} seconds"
     info "Container status:"
-    docker compose ps 2>/dev/null || docker ps -a --filter "name=anonymizer" --format "table {{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}" || true
+    docker compose ps 2>/dev/null || docker ps -a --filter "name=database-deletor" --format "table {{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}" || true
     
     # Check container logs to diagnose the restart issue
     if docker compose ps 2>/dev/null | grep -qE "Restarting|Exited|Exit"; then
         warning "Container is restarting or exited. Checking logs..."
         info "=== Last 50 lines of container logs ==="
-        docker compose logs --tail=50 2>&1 || docker logs anonymizer-api-1 --tail=50 2>&1 || true
+        docker compose logs --tail=50 2>&1 || docker logs database-deletor-api-1 --tail=50 2>&1 || true
         info "=== End of logs ==="
         
         # Check for common errors
@@ -988,7 +988,7 @@ else
                                 
                                 if echo "$CHECK_OUTPUT" 2>/dev/null | grep -qiE "api path.*not found|could not find.*api" 2>/dev/null; then
                                     warning "ISSUE DETECTED: API project path not found in TestWebApplicationFactory"
-                                    info "This may indicate that source code is not copied to /app/src/Anonymizer.Api/ in container"
+                                    info "This may indicate that source code is not copied to /app/src/DatabaseDeletor.Api/ in container"
                                     SWAGGER_TEST_SUMMARY+="\nISSUE: API project path not found\n"
                                 fi
                                 
@@ -1199,7 +1199,7 @@ if [[ -n "${SWAGGER_EXECUTION_ID:-}" ]]; then
         info "  curl -H \"X-API-Key: ${API_KEY}\" http://localhost:8096/api/v1/tests/output/${SWAGGER_EXECUTION_ID}/error"
         info ""
         info "Or check container logs:"
-        info "  docker logs anonymizer-api-1 | grep -A 50 'Swagger Integration Tests'"
+        info "  docker logs database-deletor-api-1 | grep -A 50 'Swagger Integration Tests'"
     fi
 elif [[ "${RUN_SWAGGER_TESTS:-true}" == "true" ]]; then
     warning "Swagger Integration tests were supposed to run but no execution ID was captured"

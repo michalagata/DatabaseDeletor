@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-# Build base Docker image for Anonymizer API
+# Build base Docker image for DatabaseDeletor API
 # Base images are rebuilt only when dependencies change
 
 SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
@@ -12,7 +12,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/_common.sh"
 
-BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-anonymizer-base}"
+BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-database-deletor-base}"
 BASE_IMAGE_TAG="${BASE_IMAGE_TAG:-10.0}"
 PLATFORM="${PLATFORM:-linux/amd64}"
 

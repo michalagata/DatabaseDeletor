@@ -55,11 +55,12 @@ Updated: 2026-02-18
 - **Decision:** Lightweight custom IMediator implementation
 - **Consequences:** ~50 lines of code, full control
 
-### Decision: ADR-005 -- vLLM for AI Serving
+### Decision: ADR-005 -- AI/ML Infrastructure Removed
 - **Date:** 2026-02-18
-- **Context:** ai.md mandates vLLM or SGLang
-- **Decision:** vLLM with OpenAI-compatible API
-- **Consequences:** GPU hardware required, on-premise only
+- **Context:** Infrastructure.AI project had 4 skeleton services (ONNX, SemanticKernel, KernelMemory, TorchSharp), all throwing NotImplementedException. Zero consumers across the entire codebase. AddInfrastructureAI() was never called.
+- **Decision:** Removed entire Infrastructure.AI project, domain interfaces (IInferenceService, ITrainingService), and all AI references from README.md
+- **Alternatives considered:** Keeping as Phase 2 placeholder (rejected — adds complexity, build time, misleading dependencies for a deterministic database deletion tool)
+- **Consequences:** 9 projects total (5 src + 4 test) instead of 11. Cleaner solution. No functional change.
 
 ## Conventions
 - English-only for all engineering artifacts
@@ -84,7 +85,7 @@ Updated: 2026-02-18
 - Non-root containers ONLY
 - GPU required for AI serving
 - spec.txt and extend.txt do NOT exist in repo
-- No source code exists yet -- greenfield project
+- AI/ML removed — not needed for deterministic database deletion
 
 ### Decision: ADR-006 -- System.CommandLine 2.0.0-beta5.25306.1 API patterns
 - **Date:** 2026-02-18

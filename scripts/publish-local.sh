@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# Local publish script for macOS - Build, Clean, Deploy Versioner
+# Local publish script for macOS - Build, Clean, Deploy DatabaseDeletor
 # Based on _publishLocal.sh with enhanced reporting
 
 set -Eeuo pipefail
@@ -18,9 +18,9 @@ NC='\033[0m' # No Color
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-TARGET_DIR="${TARGET_DIR:-/Users/anubis/Apps/Versioner}"
-BUILD_DIR="$PROJECT_ROOT/DEPLOYMENT/net8.0"
-PACKAGE_NAME="Versioner.macOS.zip"
+TARGET_DIR="${TARGET_DIR:-/Users/anubis/Apps/DatabaseDeletor}"
+BUILD_DIR="$PROJECT_ROOT/DEPLOYMENT/net10.0"
+PACKAGE_NAME="DatabaseDeletor.macOS.zip"
 PACKAGE_PATH="$PROJECT_ROOT/DEPLOYMENT/$PACKAGE_NAME"
 
 # Logging functions
@@ -53,12 +53,12 @@ log_step() {
 # Help function
 show_help() {
     cat << EOF
-Versioner Local Publish Script
+DatabaseDeletor Local Publish Script
 
 Usage: $0 [OPTIONS]
 
 OPTIONS:
-    -t, --target DIR          Target directory [default: /Users/anubis/Apps/Versioner]
+    -t, --target DIR          Target directory [default: /Users/anubis/Apps/DatabaseDeletor]
     -f, --force               Force installation (overwrite existing)
     -b, --build               Build before publishing
     -h, --help                Show this help message
@@ -124,10 +124,10 @@ validate_environment() {
     log_success "Environment validation passed"
 }
 
-# Build Versioner if needed
+# Build DatabaseDeletor if needed
 build_versioner() {
     if [[ "$BUILD" == "true" ]]; then
-        log_step "Building Versioner..."
+        log_step "Building DatabaseDeletor..."
         "$SCRIPT_DIR/_performBuildMacOS.sh"
         if [[ $? -eq 0 ]]; then
             log_success "Build completed successfully"
@@ -224,16 +224,16 @@ deploy_package() {
 set_permissions() {
     log_step "Setting permissions..."
     
-    if [[ -f "$TARGET_DIR/Versioner.Cli" ]]; then
-        chmod +x "$TARGET_DIR/Versioner.Cli"
-        log_success "Executable permissions set for Versioner.Cli"
+    if [[ -f "$TARGET_DIR/DatabaseDeletor.Cli" ]]; then
+        chmod +x "$TARGET_DIR/DatabaseDeletor.Cli"
+        log_success "Executable permissions set for DatabaseDeletor.Cli"
     else
-        log_warning "Versioner.Cli not found - checking for .exe version"
-        if [[ -f "$TARGET_DIR/Versioner.Cli.exe" ]]; then
-            chmod +x "$TARGET_DIR/Versioner.Cli.exe"
-            log_success "Executable permissions set for Versioner.Cli.exe"
+        log_warning "DatabaseDeletor.Cli not found - checking for .exe version"
+        if [[ -f "$TARGET_DIR/DatabaseDeletor.Cli.exe" ]]; then
+            chmod +x "$TARGET_DIR/DatabaseDeletor.Cli.exe"
+            log_success "Executable permissions set for DatabaseDeletor.Cli.exe"
         else
-            log_warning "No Versioner executable found"
+            log_warning "No DatabaseDeletor executable found"
         fi
     fi
 }
@@ -252,14 +252,14 @@ verify_deployment() {
     log_info "Deployed files: $deployed_files"
     
     # Test executable if possible
-    # if [[ -f "$TARGET_DIR/Versioner.Cli" ]]; then
+    # if [[ -f "$TARGET_DIR/DatabaseDeletor.Cli" ]]; then
     #     log_info "Testing Linux executable..."
-    #     if "$TARGET_DIR/Versioner.Cli" --help >/dev/null 2>&1; then
-    #         log_success "Versioner.Cli is working correctly"
+    #     if "$TARGET_DIR/DatabaseDeletor.Cli" --help >/dev/null 2>&1; then
+    #         log_success "DatabaseDeletor.Cli is working correctly"
     #     else
-    #         log_warning "Versioner.Cli test failed (this might be normal if dependencies are missing)"
+    #         log_warning "DatabaseDeletor.Cli test failed (this might be normal if dependencies are missing)"
     #     fi
-    # elif [[ -f "$TARGET_DIR/Versioner.Cli.exe" ]]; then
+    # elif [[ -f "$TARGET_DIR/DatabaseDeletor.Cli.exe" ]]; then
     #     log_info "Windows executable detected - cannot test on macOS"
     # else
     #     log_warning "No executable found for testing"
@@ -287,10 +287,10 @@ generate_report() {
     
     # Check for key files
     echo -e "\n${WHITE}Key Files Status:${NC}"
-    if [[ -f "$TARGET_DIR/Versioner.Cli" ]]; then
-        echo -e "${GREEN}  ✅ Versioner.Cli (Linux executable)${NC}"
-    elif [[ -f "$TARGET_DIR/Versioner.Cli.exe" ]]; then
-        echo -e "${GREEN}  ✅ Versioner.Cli.exe (Windows executable)${NC}"
+    if [[ -f "$TARGET_DIR/DatabaseDeletor.Cli" ]]; then
+        echo -e "${GREEN}  ✅ DatabaseDeletor.Cli (Linux executable)${NC}"
+    elif [[ -f "$TARGET_DIR/DatabaseDeletor.Cli.exe" ]]; then
+        echo -e "${GREEN}  ✅ DatabaseDeletor.Cli.exe (Windows executable)${NC}"
     else
         echo -e "${RED}  ❌ No executable found${NC}"
     fi
@@ -348,7 +348,7 @@ main() {
     generate_report
     
     log_success "Local publish completed successfully!"
-    echo -e "${WHITE}Versioner is now available at: ${CYAN}$TARGET_DIR${NC}"
+    echo -e "${WHITE}DatabaseDeletor is now available at: ${CYAN}$TARGET_DIR${NC}"
     echo -e "${WHITE}You can now use the versioning scripts in your projects.${NC}"
     
     # Cleanup suggestion

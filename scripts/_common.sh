@@ -312,7 +312,7 @@ get_target_framework() {
     fi
     
     # Default fallback
-    echo "net8.0"
+    echo "net10.0"
 }
 
 # Get assembly name from project file (or default to project name)
@@ -378,6 +378,15 @@ get_runtime_id() {
             echo "$platform"
             ;;
     esac
+}
+
+# Get platform-specific project (pass-through unless platform-specific projects exist)
+get_platform_project() {
+    local project="$1"
+    local platform="$2"
+
+    # Return the project as-is; platform-specific projects would be handled here
+    echo "$project"
 }
 
 # =============================================================================
@@ -482,13 +491,62 @@ run_tests() {
     return 0
 }
 
+# Run unit tests (builds before testing)
+run_unit_tests() {
+    # Check if tests should be skipped
+    if [[ "${SKIP_TESTS:-false}" == "true" ]]; then
+        warning "Skipping unit tests (SKIP_TESTS=true)"
+        return 0
+    fi
+
+    local test_projects=()
+    while IFS= read -r test_proj; do
+        if [[ -n "$test_proj" && -f "$test_proj" ]]; then
+            test_projects+=("$test_proj")
+        fi
+    done < <(find_test_projects)
+
+    if (( ${#test_projects[@]} == 0 )); then
+        info "No unit test projects found - skipping tests"
+        return 0
+    fi
+
+    info "Found ${#test_projects[@]} test project(s)"
+    for test_proj in "${test_projects[@]}"; do
+        info "  - $(basename "$test_proj")"
+    done
+
+    step "Building and running unit tests..."
+
+    local failed_tests=()
+    for test_proj in "${test_projects[@]}"; do
+        local test_name
+        test_name="$(basename "$test_proj" .csproj)"
+        info "Running tests in: $test_name"
+
+        if ! dotnet test "$test_proj" --configuration Release --verbosity minimal; then
+            failed_tests+=("$test_name")
+        else
+            success "Tests passed: $test_name"
+        fi
+    done
+
+    if (( ${#failed_tests[@]} > 0 )); then
+        error "Unit tests failed in ${#failed_tests[@]} project(s): ${failed_tests[*]}"
+        return 1
+    fi
+
+    success "All unit tests passed"
+    return 0
+}
+
 # Publish project
 run_publish() {
     local project="$1"
     local output_dir="$2"
     local configuration="${3:-Release}"
     local runtime_id="${4:-}"
-    local self_contained="${5:-false}"
+    local self_contained="${5:-true}"
     local extra_args="${6:-}"
     
     info "Publishing $(basename "$project")..."
@@ -647,7 +705,7 @@ export -f error info success warning step log_header timestamp
 export -f is_dotnet_project find_solution_files get_solution_file get_solution_name
 export -f find_all_projects find_non_test_projects find_main_project find_library_projects find_test_projects
 export -f detect_project_type get_project_name get_target_framework get_assembly_name get_runtime_id
-export -f run_restore run_build run_tests run_publish
+export -f get_platform_project run_restore run_build run_tests run_unit_tests run_publish
 export -f check_dotnet check_git check_docker
 export -f cleanup_bak_files cleanup_build_artifacts show_project_summary
 

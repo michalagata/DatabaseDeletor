@@ -2,7 +2,7 @@
 # DatabaseDeletor Multi-Stage Dockerfile
 # =============================================================================
 # Target platform: linux/amd64
-# Base: .NET 10 SDK (build) -> .NET 10 Runtime (final)
+# Base: .NET 10 SDK (build) -> runtime-deps (final, self-contained)
 # Security: non-root user, read-only filesystem where feasible
 # =============================================================================
 
@@ -29,24 +29,26 @@ RUN dotnet restore DatabaseDeletor.sln --runtime linux-x64
 # Copy all source code
 COPY src/ src/
 
-# Build and publish CLI application
+# Build and publish CLI application (self-contained)
 RUN dotnet publish src/DatabaseDeletor.Cli/DatabaseDeletor.Cli.csproj \
     --configuration Release \
     --runtime linux-x64 \
-    --no-self-contained \
+    --self-contained true \
+    -p:PublishSingleFile=false \
     --no-restore \
     --output /app/cli
 
-# Build and publish API application
+# Build and publish API application (self-contained)
 RUN dotnet publish src/DatabaseDeletor.Api/DatabaseDeletor.Api.csproj \
     --configuration Release \
     --runtime linux-x64 \
-    --no-self-contained \
+    --self-contained true \
+    -p:PublishSingleFile=false \
     --no-restore \
     --output /app/api
 
-# --- Stage 2: Runtime (CLI) ---
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS runtime
+# --- Stage 2: Runtime (self-contained, no .NET runtime needed) ---
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-preview AS runtime
 WORKDIR /app
 
 # Install security updates
@@ -60,6 +62,9 @@ RUN groupadd --gid 1000 appuser && \
 COPY --from=build /app/cli ./cli
 COPY --from=build /app/api ./api
 
+# Make native executables executable
+RUN chmod +x /app/cli/DatabaseDeletor.Cli /app/api/DatabaseDeletor.Api
+
 # Create writable directories for logs and temp files
 RUN mkdir -p /app/logs /app/data && \
     chown -R appuser:appuser /app
@@ -67,9 +72,9 @@ RUN mkdir -p /app/logs /app/data && \
 # Switch to non-root user
 USER appuser
 
-# Health check
+# Health check using native executable
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD dotnet /app/api/DatabaseDeletor.Api.dll --urls http://localhost:8080 || exit 1
+    CMD /app/api/DatabaseDeletor.Api --urls http://localhost:8080 || exit 1
 
-# Default entrypoint is the CLI
-ENTRYPOINT ["dotnet", "/app/cli/DatabaseDeletor.Cli.dll"]
+# Default entrypoint is the CLI (native executable)
+ENTRYPOINT ["/app/cli/DatabaseDeletor.Cli"]

@@ -47,7 +47,7 @@ else
 fi
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="$PROJECT_ROOT/DEPLOYMENT/macOS"
-BUILD_DIR="$OUTPUT_DIR/net8.0"
+BUILD_DIR="$OUTPUT_DIR/net10.0"
 OUTPUT_ZIP="$PROJECT_ROOT/DEPLOYMENT/${SOLUTION_NAME}.macOS.zip"
 PLATFORM="macos"
 RUNTIME="$(get_runtime_id "$PLATFORM")"
@@ -79,11 +79,10 @@ echo "Target Framework: $TARGET_FRAMEWORK"
 # all dependencies with correct platform-agnostic IL for libraries.
 
 # Run unit tests before publish (if test projects exist)
-# TEMPORARILY DISABLED: tests are failing but build artifacts are OK
-#if ! run_unit_tests; then
-#    error "Unit tests failed - cannot proceed with publish"
-#    exit 1
-#fi
+if ! run_unit_tests; then
+    error "Unit tests failed - cannot proceed with publish"
+    exit 1
+fi
 
 # Publish self-contained executable for main project
 # NOTE: self-contained with loose files (not single-file) for maximum compatibility
@@ -119,10 +118,11 @@ fi
 find "$BUILD_DIR" -name "*.log" -delete
 
 # Verify artifact architecture before zipping
+MAIN_PROJECT_NAME="$(get_project_name "$MAIN_PROJECT")"
 if command -v file &> /dev/null; then
     echo "Verifying artifact architecture..."
-    if [[ -f "$BUILD_DIR/Versioner.Cli" ]]; then
-        file_info=$(file -b "$BUILD_DIR/Versioner.Cli")
+    if [[ -f "$BUILD_DIR/$MAIN_PROJECT_NAME" ]]; then
+        file_info=$(file -b "$BUILD_DIR/$MAIN_PROJECT_NAME")
         echo "  Artifact info: $file_info"
         if [[ "$file_info" != *"Mach-O"* ]]; then
             error "Build artifact is NOT a Mach-O executable! Info: $file_info"
@@ -136,9 +136,9 @@ if command -v file &> /dev/null; then
             error "Build artifact mismatch! Expected x86_64, got: $file_info"
             exit 1
         fi
-        echo "  Artifact architecture verified ✓"
+        echo "  Artifact architecture verified"
     else
-        warning "  Versioner.Cli not found in build dir, skipping verification"
+        warning "  $MAIN_PROJECT_NAME not found in build dir, skipping verification"
     fi
 fi
 
@@ -152,8 +152,8 @@ echo "Cleaning build directory..."
 rm -rf "$BUILD_DIR"
 # Remove the macOS staging directory to avoid leaving empty DEPLOYMENT/macOS
 rm -rf "$OUTPUT_DIR"
-# Extra safety: remove stray DEPLOYMENT/net8.0 if it was created
-rm -rf "$PROJECT_ROOT/DEPLOYMENT/net8.0"
+# Extra safety: remove stray DEPLOYMENT/net10.0 if it was created
+rm -rf "$PROJECT_ROOT/DEPLOYMENT/net10.0"
 
 echo "========================================"
 echo "macOS build completed successfully!"

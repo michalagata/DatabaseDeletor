@@ -3,7 +3,13 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>DatabaseDeletor.Cli</RootNamespace>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DatabaseDeletor.Cli.Tests" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />

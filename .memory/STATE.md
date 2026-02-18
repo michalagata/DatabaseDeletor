@@ -1,43 +1,41 @@
 # Current State
 
 ## Active Task
-Adapt build scripts, create Dockerfile, write README.md
+README.md rewrite — remove AI/ML references, add detailed product guide
 
 ## Status
 completed
 
 ## Completion
-100%
+100% — README updated, AI removed, build & tests verified
 
 ## Last Action
-Adapted build.sh and push.sh for DatabaseDeletor, created docker/Dockerfile (multi-stage, non-root), updated DOCKER_IMAGE, updated .dockerignore, wrote comprehensive README.md. Verified: build 0 warnings 0 errors, 154 tests passing.
+Rewrote README.md: removed all AI/ML references (feature list, projects table, AI/ML section, project structure), added comprehensive "Product Guide" section (~150 lines) covering SQL query syntax, table name formats, connection strings per provider, CLI usage with 5 real-world examples, batch size tuning guide, internal deletion strategies per provider, WHERE clause behavior, logging details, REST API section.
 
 ## Next Step
-User review. Remaining future work: expand test coverage to ≥80%, add CLI/API test methods, implement Phase 2 features (AI/ML, WPF, Angular admin panel).
+None — user's request fully completed.
 
 ## Files Modified This Session
-- `scripts/build.sh` — Adapted from Versioner to DatabaseDeletor (image name, help text, removed build_solution step)
-- `scripts/push.sh` — Adapted from Versioner to DatabaseDeletor (commit message, help text)
-- `DOCKER_IMAGE` — Changed from `darkdervish/debian-base` to `database-deletor`
-- `.dockerignore` — Updated to exclude tests, docs, scripts, .memory, .claude
-- `docker/Dockerfile` — Created multi-stage Dockerfile (SDK build -> ASP.NET runtime, non-root user, linux/amd64)
-- `README.md` — Created comprehensive documentation (architecture, setup, usage, CLI options, Docker, tech stack, development guide)
+- `README.md` — Removed AI/ML references, added Product Guide section, updated project counts
+- `DatabaseDeletor.sln` — Removed Infrastructure.AI project (prior step)
+- `src/DatabaseDeletor.Infrastructure.AI/` — Entire directory deleted (prior step)
+- `src/DatabaseDeletor.Domain/Interfaces/IInferenceService.cs` — Deleted (prior step)
+- `src/DatabaseDeletor.Domain/Interfaces/ITrainingService.cs` — Deleted (prior step)
 
 ## Open Decisions
-- Serilog.Settings.Configuration version: 9.0.0 vs 10.0.0 (needed for API project if config-based Serilog setup is desired)
-- CLI/API test projects are empty — need test methods added
+- None
 
 ## Blockers (NEEDS INPUT)
 - None
 
 ## Git State
 - Branch: master
-- Last commit: c958854 (Refactor scripts to use Zsh)
-- Uncommitted changes: yes (all new project files, build scripts, Dockerfile, README)
+- Last commit: 6875ec5 final1
+- Uncommitted changes: yes (README.md update, AI removal from prior step)
 
 ## Loaded Rules
-- general.md, dotnet.md, docker.md (from .github/rules/)
+- general.md, dotnet.md, docker.md, bash.md
 
 ## User Preferences (This Session)
-- Documentation language: English
-- .NET 10, Clean Architecture, no EF Core, no Redis
+- Describe product in detail with usage examples in README.md
+- Remove AI/ML if not necessary (confirmed: removed)
