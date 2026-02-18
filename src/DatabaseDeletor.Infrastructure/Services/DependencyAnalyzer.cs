@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DatabaseDeletor.Infrastructure.Services;
 
-public sealed class DependencyAnalyzer : IDependencyAnalyzer
+public sealed partial class DependencyAnalyzer : IDependencyAnalyzer
 {
     private readonly IDatabaseProviderResolver _providerResolver;
     private readonly IEnumerable<ISchemaIntrospector> _introspectors;
@@ -26,7 +26,7 @@ public sealed class DependencyAnalyzer : IDependencyAnalyzer
         var provider = _providerResolver.Resolve(connectionString);
         var introspector = GetIntrospector(provider);
 
-        _logger.LogInformation("Analyzing dependencies for {Schema}.{Table} using {Provider}", schema, tableName, provider);
+        LogAnalyzing(schema, tableName, provider);
 
         var graph = new DependencyGraph();
         var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -47,7 +47,7 @@ public sealed class DependencyAnalyzer : IDependencyAnalyzer
             var tableInfo = await introspector.GetTableInfoAsync(connectionString, currentSchema, currentTable, ct).ConfigureAwait(false);
             graph.AddTable(tableInfo);
 
-            _logger.LogDebug("Processing table {Table} ({RowCount} rows)", tableInfo.FullName, tableInfo.RowCount);
+            LogProcessingTable(tableInfo.FullName, tableInfo.RowCount);
 
             var referencingFks = await introspector.GetReferencingForeignKeysAsync(connectionString, currentSchema, currentTable, ct).ConfigureAwait(false);
 
@@ -63,7 +63,7 @@ public sealed class DependencyAnalyzer : IDependencyAnalyzer
             }
         }
 
-        _logger.LogInformation("Dependency analysis complete: {TableCount} tables found", graph.Tables.Count);
+        LogAnalysisComplete(graph.Tables.Count);
 
         return graph;
     }
@@ -71,4 +71,13 @@ public sealed class DependencyAnalyzer : IDependencyAnalyzer
     private ISchemaIntrospector GetIntrospector(DatabaseProvider provider) =>
         _introspectors.FirstOrDefault(i => i.Provider == provider)
         ?? throw new InvalidOperationException($"No schema introspector registered for provider {provider}");
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Analyzing dependencies for {Schema}.{Table} using {Provider}")]
+    private partial void LogAnalyzing(string schema, string table, DatabaseProvider provider);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Processing table {Table} ({RowCount} rows)")]
+    private partial void LogProcessingTable(string table, long rowCount);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Dependency analysis complete: {TableCount} tables found")]
+    private partial void LogAnalysisComplete(int tableCount);
 }

@@ -12,7 +12,10 @@ public sealed class PostgreSqlConnectionFactory : IDbConnectionFactory
     public IDbConnection CreateConnection(string connectionString) =>
         new NpgsqlConnection(connectionString);
 
-    public bool CanHandle(string connectionString) =>
-        connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase)
-        && connectionString.Contains("Database=", StringComparison.OrdinalIgnoreCase);
+    public bool CanHandle(string connectionString)
+    {
+        ArgumentNullException.ThrowIfNull(connectionString);
+        return connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase)
+            && connectionString.Contains("Database=", StringComparison.OrdinalIgnoreCase);
+    }
 }

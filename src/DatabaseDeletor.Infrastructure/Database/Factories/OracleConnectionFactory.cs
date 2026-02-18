@@ -12,7 +12,10 @@ public sealed class OracleConnectionFactory : IDbConnectionFactory
     public IDbConnection CreateConnection(string connectionString) =>
         new OracleConnection(connectionString);
 
-    public bool CanHandle(string connectionString) =>
-        connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase)
-        && connectionString.Contains("User Id=", StringComparison.OrdinalIgnoreCase);
+    public bool CanHandle(string connectionString)
+    {
+        ArgumentNullException.ThrowIfNull(connectionString);
+        return connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase)
+            && connectionString.Contains("User Id=", StringComparison.OrdinalIgnoreCase);
+    }
 }

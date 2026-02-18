@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# Docker build script for Versioner application
+# Docker build script for DatabaseDeletor application
 # Builds solution for Linux first, then builds Docker container
 
 set -Eeuo pipefail
@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-IMAGE_NAME="${IMAGE_NAME:-versioner}"
+IMAGE_NAME="${IMAGE_NAME:-database-deletor}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 REGISTRY="${REGISTRY:-}"
 PLATFORM="${PLATFORM:-linux/amd64}"
@@ -44,12 +44,12 @@ log_error() {
 # Help function
 show_help() {
     cat << EOF
-Versioner Docker Build Script
+DatabaseDeletor Docker Build Script
 
 Usage: $0 [OPTIONS]
 
 OPTIONS:
-    -n, --name NAME           Image name [default: versioner]
+    -n, --name NAME           Image name [default: database-deletor]
     -t, --tag TAG             Image tag [default: latest]
     -r, --registry REGISTRY   Docker registry URL
     -p, --platform PLATFORM  Target platform [default: linux/amd64]
@@ -57,8 +57,8 @@ OPTIONS:
     -h, --help                Show this help message
 
 EXAMPLES:
-    $0                                    # Build versioner:latest
-    $0 -n my-versioner -t v1.0.0         # Build my-versioner:v1.0.0
+    $0                                    # Build database-deletor:latest
+    $0 -n my-deletor -t v1.0.0          # Build my-deletor:v1.0.0
     $0 -r registry.example.com --push    # Build and push to registry
 
 ENVIRONMENT VARIABLES:
@@ -110,17 +110,17 @@ parse_args() {
 # Clean up .bak files from repository
 cleanup_bak_files() {
     log_info "Cleaning up .bak files from repository..."
-    
+
     local bak_files=()
     while IFS= read -r -d '' file; do
         bak_files+=("$file")
     done < <(find "$PROJECT_ROOT" -type f -name "*.bak" -print0 2>/dev/null || true)
-    
+
     if (( ${#bak_files[@]} == 0 )); then
         log_info "No .bak files found in repository"
         return 0
     fi
-    
+
     log_info "Found ${#bak_files[@]} .bak file(s) to remove"
     for file in "${bak_files[@]}"; do
         if rm -f "$file" 2>/dev/null; then
@@ -129,7 +129,7 @@ cleanup_bak_files() {
             log_warning "Failed to remove: $file"
         fi
     done
-    
+
     log_success "Cleanup of .bak files completed"
     return 0
 }
@@ -137,40 +137,25 @@ cleanup_bak_files() {
 # Validate environment
 validate_environment() {
     log_info "Validating environment..."
-    
+
     # Check if docker is available
     if ! command -v docker &> /dev/null; then
         log_error "Docker is not installed or not in PATH"
         exit 1
     fi
-    
+
     # Check if we're in the right directory
     if [[ ! -f "$PROJECT_ROOT/docker/Dockerfile" ]]; then
-        log_error "Dockerfile not found. Please run this script from the project root or scripts directory."
+        log_error "Dockerfile not found at $PROJECT_ROOT/docker/Dockerfile"
         exit 1
     fi
-    
+
     # Validate platform
     if [[ "$PLATFORM" != "linux/amd64" && "$PLATFORM" != "linux/arm64" ]]; then
         log_warning "Platform $PLATFORM may not be supported. Recommended: linux/amd64"
     fi
-    
-    log_success "Environment validation passed"
-}
 
-# Build solution for Linux first
-build_solution() {
-    log_info "Building solution for Linux first..."
-    
-    # Use the build-linux.sh script
-    "$SCRIPT_DIR/build-linux.sh"
-    
-    if [[ $? -eq 0 ]]; then
-        log_success "Solution built successfully for Linux"
-    else
-        log_error "Failed to build solution for Linux"
-        exit 1
-    fi
+    log_success "Environment validation passed"
 }
 
 # Build Docker image
@@ -179,14 +164,14 @@ build_docker_image() {
     log_info "Image: $IMAGE_NAME:$IMAGE_TAG"
     log_info "Platform: $PLATFORM"
     log_info "Registry: ${REGISTRY:-none}"
-    
-    # Build the image
+
+    # Build the image using multi-stage Dockerfile
     docker build \
         --platform "$PLATFORM" \
         --tag "$IMAGE_NAME:$IMAGE_TAG" \
         --file "$PROJECT_ROOT/docker/Dockerfile" \
         "$PROJECT_ROOT"
-    
+
     if [[ $? -eq 0 ]]; then
         log_success "Docker image built successfully"
     else
@@ -200,9 +185,9 @@ tag_for_registry() {
     if [[ -n "$REGISTRY" ]]; then
         local full_image_name="$REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
         log_info "Tagging image for registry: $full_image_name"
-        
+
         docker tag "$IMAGE_NAME:$IMAGE_TAG" "$full_image_name"
-        
+
         if [[ $? -eq 0 ]]; then
             log_success "Image tagged for registry"
         else
@@ -218,9 +203,9 @@ push_image() {
         if [[ -n "$REGISTRY" ]]; then
             local full_image_name="$REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
             log_info "Pushing image to registry: $full_image_name"
-            
+
             docker push "$full_image_name"
-            
+
             if [[ $? -eq 0 ]]; then
                 log_success "Image pushed to registry successfully"
             else
@@ -243,7 +228,7 @@ show_image_info() {
         echo "  Registry: $REGISTRY"
         echo "  Full name: $REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
     fi
-    
+
     # Show image size
     local image_size
     image_size=$(docker images --format "table {{.Size}}" "$IMAGE_NAME:$IMAGE_TAG" | tail -n 1)
@@ -253,17 +238,17 @@ show_image_info() {
 # Clean up old images (optional)
 cleanup_old_images() {
     log_info "Cleaning up old images..."
-    
+
     # Remove dangling images
     docker image prune -f
-    
+
     # Remove old versions of the same image (keep last 3)
     docker images "$IMAGE_NAME" --format "table {{.Tag}}\t{{.CreatedAt}}" | \
         grep -v "$IMAGE_TAG" | \
         tail -n +4 | \
         awk '{print $1}' | \
         xargs -r -I {} docker rmi "$IMAGE_NAME:{}" 2>/dev/null || true
-    
+
     log_success "Cleanup completed"
 }
 
@@ -276,40 +261,37 @@ log_header() {
 
 # Main build process
 main() {
-    log_header "🚀 VERSIONER DOCKER BUILD SCRIPT 🚀"
+    log_header "DATABASE DELETOR DOCKER BUILD SCRIPT"
     echo -e "${WHITE}Project Root: ${CYAN}$PROJECT_ROOT${NC}"
     echo -e "${WHITE}Script Directory: ${CYAN}$SCRIPT_DIR${NC}"
     echo -e "${WHITE}Image: ${CYAN}$IMAGE_NAME:$IMAGE_TAG${NC}"
     echo -e "${WHITE}Platform: ${CYAN}$PLATFORM${NC}"
     echo -e "${WHITE}Timestamp: ${CYAN}$(date '+%Y-%m-%d %H:%M:%S')${NC}"
-    
+
     # Parse arguments
     parse_args "$@"
-    
+
     # STEP 1: Remove .bak files from repository
     cleanup_bak_files
-    
+
     # Validate environment
     validate_environment
-    
-    # Build solution for Linux first
-    build_solution
-    
-    # Build Docker image
+
+    # Build Docker image (multi-stage Dockerfile handles restore/build/publish)
     build_docker_image
-    
+
     # Tag for registry
     tag_for_registry
-    
+
     # Push image
     push_image
-    
+
     # Show image info
     show_image_info
-    
+
     # Cleanup old images
     cleanup_old_images
-    
+
     log_success "Docker build process completed successfully!"
     echo -e "${WHITE}Image: ${CYAN}$IMAGE_NAME:$IMAGE_TAG${NC}"
     if [[ -n "$REGISTRY" ]]; then

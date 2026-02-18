@@ -18,32 +18,37 @@ public sealed class PostgreSqlBulkDeleteExecutor : IBulkDeleteExecutor
         IProgress<long>? progress = null,
         CancellationToken ct = default)
     {
-        await using var connection = new NpgsqlConnection(connectionString);
-        await connection.OpenAsync(ct).ConfigureAwait(false);
+        ArgumentNullException.ThrowIfNull(deletionStep);
 
-        long totalDeleted = 0;
-
-        if (step.EstimatedRowCount > BatchSize)
+        var connection = new NpgsqlConnection(connectionString);
+        await using (connection.ConfigureAwait(false))
         {
-            int batchDeleted;
-            do
-            {
-                ct.ThrowIfCancellationRequested();
+            await connection.OpenAsync(ct).ConfigureAwait(false);
 
-                var batchSql = BuildBatchDeleteSql(step.DeleteSql, BatchSize);
-                batchDeleted = await connection.ExecuteAsync(batchSql).ConfigureAwait(false);
-                totalDeleted += batchDeleted;
+            long totalDeleted = 0;
+
+            if (deletionStep.EstimatedRowCount > BatchSize)
+            {
+                int batchDeleted;
+                do
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    var batchSql = BuildBatchDeleteSql(deletionStep.DeleteSql, BatchSize);
+                    batchDeleted = await connection.ExecuteAsync(batchSql).ConfigureAwait(false);
+                    totalDeleted += batchDeleted;
+                    progress?.Report(totalDeleted);
+                }
+                while (batchDeleted >= BatchSize);
+            }
+            else
+            {
+                totalDeleted = await connection.ExecuteAsync(deletionStep.DeleteSql).ConfigureAwait(false);
                 progress?.Report(totalDeleted);
             }
-            while (batchDeleted >= BatchSize);
-        }
-        else
-        {
-            totalDeleted = await connection.ExecuteAsync(step.DeleteSql).ConfigureAwait(false);
-            progress?.Report(totalDeleted);
-        }
 
-        return totalDeleted;
+            return totalDeleted;
+        }
     }
 
     private static string BuildBatchDeleteSql(string deleteSql, int batchSize)
@@ -62,7 +67,7 @@ public sealed class PostgreSqlBulkDeleteExecutor : IBulkDeleteExecutor
     {
         var fromIndex = deleteSql.IndexOf("FROM", StringComparison.OrdinalIgnoreCase) + 4;
         var rest = deleteSql[fromIndex..].Trim();
-        var spaceIndex = rest.IndexOf(' ');
+        var spaceIndex = rest.IndexOf(' ', StringComparison.Ordinal);
         return spaceIndex > 0 ? rest[..spaceIndex] : rest;
     }
 

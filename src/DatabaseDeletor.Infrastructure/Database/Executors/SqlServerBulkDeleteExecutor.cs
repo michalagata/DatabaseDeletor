@@ -1,4 +1,3 @@
-using System.Data;
 using Dapper;
 using DatabaseDeletor.Domain.Entities;
 using DatabaseDeletor.Domain.Enums;
@@ -19,43 +18,37 @@ public sealed class SqlServerBulkDeleteExecutor : IBulkDeleteExecutor
         IProgress<long>? progress = null,
         CancellationToken ct = default)
     {
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(ct).ConfigureAwait(false);
+        ArgumentNullException.ThrowIfNull(deletionStep);
 
-        long totalDeleted = 0;
-
-        var batchSql = deletionStep.DeleteSql.Contains("WHERE", StringComparison.OrdinalIgnoreCase)
-            ? $"""
-               DECLARE @deleted INT = 1;
-               WHILE @deleted > 0
-               BEGIN
-                   DELETE TOP ({BatchSize}) FROM ({deletionStep.DeleteSql}) AS d;
-                   SET @deleted = @@ROWCOUNT;
-               END
-               """
-            : deletionStep.DeleteSql;
-
-        if (deletionStep.EstimatedRowCount > BatchSize)
+        var connection = new SqlConnection(connectionString);
+        await using (connection.ConfigureAwait(false))
         {
-            int batchDeleted;
-            do
-            {
-                ct.ThrowIfCancellationRequested();
+            await connection.OpenAsync(ct).ConfigureAwait(false);
 
-                var topSql = AddTopClause(deletionStep.DeleteSql, BatchSize);
-                batchDeleted = await connection.ExecuteAsync(topSql).ConfigureAwait(false);
-                totalDeleted += batchDeleted;
+            long totalDeleted = 0;
+
+            if (deletionStep.EstimatedRowCount > BatchSize)
+            {
+                int batchDeleted;
+                do
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    var topSql = AddTopClause(deletionStep.DeleteSql, BatchSize);
+                    batchDeleted = await connection.ExecuteAsync(topSql).ConfigureAwait(false);
+                    totalDeleted += batchDeleted;
+                    progress?.Report(totalDeleted);
+                }
+                while (batchDeleted >= BatchSize);
+            }
+            else
+            {
+                totalDeleted = await connection.ExecuteAsync(deletionStep.DeleteSql).ConfigureAwait(false);
                 progress?.Report(totalDeleted);
             }
-            while (batchDeleted >= BatchSize);
-        }
-        else
-        {
-            totalDeleted = await connection.ExecuteAsync(deletionStep.DeleteSql).ConfigureAwait(false);
-            progress?.Report(totalDeleted);
-        }
 
-        return totalDeleted;
+            return totalDeleted;
+        }
     }
 
     private static string AddTopClause(string deleteSql, int batchSize)

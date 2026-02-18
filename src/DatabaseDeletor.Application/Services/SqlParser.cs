@@ -40,10 +40,10 @@ public sealed partial class SqlParser : ISqlParser
     private static (string Schema, string TableName) ParseTableName(string tablePart)
     {
         var cleaned = tablePart
-            .Replace("[", "")
-            .Replace("]", "")
-            .Replace("\"", "")
-            .Replace("`", "");
+            .Replace("[", "", StringComparison.Ordinal)
+            .Replace("]", "", StringComparison.Ordinal)
+            .Replace("\"", "", StringComparison.Ordinal)
+            .Replace("`", "", StringComparison.Ordinal);
 
         var parts = cleaned.Split('.', StringSplitOptions.RemoveEmptyEntries);
 

@@ -18,19 +18,21 @@ public sealed class OracleBulkDeleteExecutor : IBulkDeleteExecutor
         IProgress<long>? progress = null,
         CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(deletionStep);
+
         using var connection = new OracleConnection(connectionString);
         await connection.OpenAsync(ct).ConfigureAwait(false);
 
         long totalDeleted = 0;
 
-        if (step.EstimatedRowCount > BatchSize)
+        if (deletionStep.EstimatedRowCount > BatchSize)
         {
             int batchDeleted;
             do
             {
                 ct.ThrowIfCancellationRequested();
 
-                var batchSql = AddRowNumLimit(step.DeleteSql, BatchSize);
+                var batchSql = AddRowNumLimit(deletionStep.DeleteSql, BatchSize);
                 batchDeleted = await connection.ExecuteAsync(batchSql).ConfigureAwait(false);
                 totalDeleted += batchDeleted;
                 progress?.Report(totalDeleted);
@@ -39,7 +41,7 @@ public sealed class OracleBulkDeleteExecutor : IBulkDeleteExecutor
         }
         else
         {
-            totalDeleted = await connection.ExecuteAsync(step.DeleteSql).ConfigureAwait(false);
+            totalDeleted = await connection.ExecuteAsync(deletionStep.DeleteSql).ConfigureAwait(false);
             progress?.Report(totalDeleted);
         }
 

@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Globalization;
 using DatabaseDeletor.Application;
 using DatabaseDeletor.Cli;
 using DatabaseDeletor.Infrastructure;
@@ -10,60 +11,68 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .WriteTo.File("logs/database-deletor-.log",
         rollingInterval: RollingInterval.Day,
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+        formatProvider: CultureInfo.InvariantCulture)
     .Enrich.WithThreadId()
     .Enrich.WithEnvironmentName()
     .CreateLogger();
 
+#pragma warning disable CA1031 // Last-resort exception handler for application entry point
 try
 {
-    var rootCommand = new RootCommand("DatabaseDeletor - Mass database deletion tool with dependency analysis");
-
-    var connectionStringOption = new Option<string>(
-        aliases: ["--connection-string", "-c"],
-        description: "Full database connection string")
-    { IsRequired = true };
-
-    var sqlOption = new Option<string>(
-        aliases: ["--sql", "-s"],
-        description: "SQL query targeting the table (DELETE FROM or SELECT FROM)")
-    { IsRequired = true };
-
-    var noConfirmOption = new Option<bool>(
-        aliases: ["--no-confirm", "-y"],
-        description: "Skip confirmation prompt and execute immediately");
-
-    var batchSizeOption = new Option<int>(
-        aliases: ["--batch-size", "-b"],
-        description: "Batch size for bulk deletion operations",
-        getDefaultValue: () => 10000);
-
-    var verboseOption = new Option<bool>(
-        aliases: ["--verbose", "-v"],
-        description: "Enable verbose logging output");
-
-    rootCommand.AddOption(connectionStringOption);
-    rootCommand.AddOption(sqlOption);
-    rootCommand.AddOption(noConfirmOption);
-    rootCommand.AddOption(batchSizeOption);
-    rootCommand.AddOption(verboseOption);
-
-    rootCommand.SetHandler(async (context) =>
+    var connectionStringOption = new Option<string>("--connection-string", "-c")
     {
-        var connectionString = context.ParseResult.GetValueForOption(connectionStringOption)!;
-        var sql = context.ParseResult.GetValueForOption(sqlOption)!;
-        var noConfirm = context.ParseResult.GetValueForOption(noConfirmOption);
-        var verbose = context.ParseResult.GetValueForOption(verboseOption);
-        var ct = context.GetCancellationToken();
+        Description = "Full database connection string",
+        Required = true
+    };
+
+    var sqlOption = new Option<string>("--sql", "-s")
+    {
+        Description = "SQL query targeting the table (DELETE FROM or SELECT FROM)",
+        Required = true
+    };
+
+    var noConfirmOption = new Option<bool>("--no-confirm", "-y")
+    {
+        Description = "Skip confirmation prompt and execute immediately"
+    };
+
+    var batchSizeOption = new Option<int>("--batch-size", "-b")
+    {
+        Description = "Batch size for bulk deletion operations",
+        DefaultValueFactory = _ => 10000
+    };
+
+    var verboseOption = new Option<bool>("--verbose", "-v")
+    {
+        Description = "Enable verbose logging output"
+    };
+
+    var rootCommand = new RootCommand("DatabaseDeletor - Mass database deletion tool with dependency analysis");
+    rootCommand.Add(connectionStringOption);
+    rootCommand.Add(sqlOption);
+    rootCommand.Add(noConfirmOption);
+    rootCommand.Add(batchSizeOption);
+    rootCommand.Add(verboseOption);
+
+    rootCommand.SetAction(async (ParseResult result, CancellationToken ct) =>
+    {
+        var connectionString = result.GetRequiredValue(connectionStringOption);
+        var sql = result.GetRequiredValue(sqlOption);
+        var noConfirm = result.GetValue(noConfirmOption);
+        var verbose = result.GetValue(verboseOption);
 
         if (verbose)
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .WriteTo.Console(outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.Console(
+                    outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+                    formatProvider: CultureInfo.InvariantCulture)
                 .WriteTo.File("logs/database-deletor-.log",
                     rollingInterval: RollingInterval.Day,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+                    formatProvider: CultureInfo.InvariantCulture)
                 .Enrich.WithThreadId()
                 .Enrich.WithEnvironmentName()
                 .CreateLogger();
@@ -82,29 +91,24 @@ try
 
         try
         {
-            await deletionService.RunAsync(connectionString, sql, noConfirm, ct);
+            await deletionService.RunAsync(connectionString, sql, noConfirm, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
             ConsoleRenderer.WriteError("Operation cancelled by user.");
-            context.ExitCode = 1;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Fatal error during deletion operation");
-            ConsoleRenderer.WriteError($"Error: {ex.Message}");
-            context.ExitCode = 1;
         }
     });
 
-    return await rootCommand.InvokeAsync(args);
+    var config = new CommandLineConfiguration(rootCommand);
+    return await config.InvokeAsync(args).ConfigureAwait(false);
 }
 catch (Exception ex)
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
     return 1;
 }
+#pragma warning restore CA1031
 finally
 {
-    await Log.CloseAndFlushAsync();
+    await Log.CloseAndFlushAsync().ConfigureAwait(false);
 }

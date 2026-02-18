@@ -19,8 +19,6 @@
 - Action: Compiled all research into structured reference document
 - Files: docs/AI_TRAINING_DATA_SOURCES.md (created, ~500 lines)
 - Result: Success; document covers 7 categories with name, URL, license, size, download method, and use case for each dataset
-- Categories: Polish-language (8 sources), English pre-training (10 sources), DB/SQL specialized (8 sources), Code (7 sources), Knowledge bases (6 sources), RLHF/preference (7 sources), Instruction-tuning (4 sources)
-- Also includes summary matrix and recommended 4-phase training pipeline
 
 ## [2026-02-18 00:06] Step 4: Memory System Write
 - Action: Updated STATE.md, created HISTORY.md
@@ -29,40 +27,52 @@
 
 ## [2026-02-18 09:20] Session Start (New)
 - Task: Create comprehensive Task.md gap analysis and technical specification
-- Rules loaded: 16 files from .github/rules/ (general, dotnet, docker, ai, architecture, database, angular, devops, solution-architect, solution-creator, wcag, www, 01_operating_principles, 02_global_best_practices, 04_ai_llm_standards, 07_quality_gates)
+- Rules loaded: 16 files from .github/rules/
 
-## [2026-02-18 09:20] Step 1: Phase 1 READ — Memory files loaded
-- Action: Read STATE.md, CONTEXT.md (HISTORY.md existed from prior session)
-- Files: .memory/STATE.md, .memory/CONTEXT.md
-- Result: Found prior session state (AI training data sources research)
-
-## [2026-02-18 09:21] Step 2: Repository exploration
+## [2026-02-18 09:21] Step 5: Repository exploration
 - Action: Searched for source code (.sln, .csproj, .cs, .py, .ts)
-- Files: Entire repository scanned
-- Result: NO application source code exists — only build scripts, specs, and rules
-- Decision: This is a 100% greenfield project
+- Result: NO application source code exists — greenfield project
 
-## [2026-02-18 09:22] Step 3: Specification analysis
-- Action: Read specification.txt; searched for spec.txt and extend.txt (NOT FOUND)
-- Files: specification.txt
-- Result: Identified 13 core requirements + 3 Phase 2 requirements. spec.txt and extend.txt do not exist.
+## [2026-02-18 09:22] Step 6: Specification analysis & rules loading
+- Action: Read specification.txt, loaded all 16 rule files
+- Result: Identified 13 core requirements + 3 Phase 2 requirements
 
-## [2026-02-18 09:22] Step 4: Rules loading
-- Action: Read all 16 rule files from .github/rules/
-- Files: general.md, dotnet.md, docker.md, ai.md, architecture.md, database.md, angular.md, devops.md, solution-architect.md, solution-creator.md, wcag.md, www.md, 01_operating_principles.md, 02_global_best_practices.md, 04_ai_llm_standards.md, 07_quality_gates.md
-- Result: All rules loaded and applied. Key constraints: no EF Core, no Redis, PostgreSQL default, vLLM for AI, custom Mediator
-
-## [2026-02-18 09:23] Step 5: Background research — Training data sources
-- Action: Web search for open training data sources (Polish + Global + DB-specific)
-- Result: Found 20+ data sources including PLLuM, SpeakLeash/Bielik, OSCAR, KLEJ, RedPajama-V2, The Stack v2, OASST2, SchemaPile, Spider
-- Decision: Documented all sources with exact HuggingFace identifiers and fetch methods
-
-## [2026-02-18 09:25] Step 6: Task.md creation
+## [2026-02-18 09:25] Step 7: Task.md creation
 - Action: Created comprehensive docs/Task.md (21 sections + 3 appendices)
 - Files: docs/Task.md (created)
-- Result: Complete technical specification covering gap analysis, architecture, CLI module, AI integration, training pipeline, scheduling, scraping, admin panel, configuration, auth, testing, Docker, CI/CD, security, NFR matrix, risk assessment, 26-week roadmap
+- Result: Complete technical specification
 
-## [2026-02-18 09:26] Step 7: Phase 3 WRITE — Memory files updated
-- Action: Updated STATE.md, CONTEXT.md, appended HISTORY.md
-- Files: .memory/STATE.md, .memory/CONTEXT.md, .memory/HISTORY.md
-- Result: All memory files current
+## [2026-02-18 10:00] Step 8: System.CommandLine API Research
+- Action: Investigated NuGet package cache for beta5 API surface
+- Result: Mapped entire public API, recorded ADR-006
+
+## [2026-02-18 12:00] Step 9: Serilog.Settings.Configuration Investigation
+- Action: Checked Directory.Packages.props, NuGet cache, nuget.org
+- Result: Package MISSING from Directory.Packages.props, recommended 9.0.0
+
+## [2026-02-18 13:00] Session 2: Full Implementation
+- Task: Build entire solution from scratch
+- Action: Created 11 projects (6 source + 5 test), implemented all layers
+- Files: ~60 source files created
+- Result: Build succeeded (0 warnings, 0 errors)
+
+## [2026-02-18 14:00] Session 3: Fix test compilation errors
+- Action: Fixed 145 compilation errors in test projects (CA analyzer rules, abstract DbException, NSubstitute patterns)
+- Files: tests/Directory.Build.props (created), multiple test files fixed
+- Result: 154 tests passing (54 Domain + 36 Application + 64 Infrastructure)
+
+## [2026-02-18 15:00] Session 3 continued: Expand test coverage
+- Action: Created MediatorTests.cs, Application/DependencyInjectionTests.cs, Infrastructure/DependencyInjectionTests.cs
+- Files: 3 new test files created, Application.Tests.csproj updated with package refs
+- Result: 154 tests passing
+
+## [2026-02-18 15:30] Session 3 continued: Update Task.md
+- Action: Updated docs/Task.md version 1.0.0 -> 1.1.0, status to "In Progress — Phase 1 Core CLI Implemented"
+- Files: docs/Task.md (edited)
+- Result: Gap summary and requirement tables updated
+
+## [2026-02-18 16:00] Session 4: Build scripts & README
+- Action: Adapted build.sh and push.sh for DatabaseDeletor, created docker/Dockerfile, updated DOCKER_IMAGE, .dockerignore, wrote README.md
+- Files: scripts/build.sh, scripts/push.sh, DOCKER_IMAGE, .dockerignore, docker/Dockerfile (created), README.md (created)
+- Result: Build 0 warnings 0 errors, 154 tests passing
+- Decision: Multi-stage Dockerfile with non-root user, linux/amd64 target

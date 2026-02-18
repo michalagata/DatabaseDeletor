@@ -10,7 +10,7 @@ public sealed class DatabaseProviderResolver : IDatabaseProviderResolver
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        var lower = connectionString.ToLowerInvariant();
+        var lower = connectionString.ToUpperInvariant();
 
         if (ContainsSqlServerMarkers(lower))
             return DatabaseProvider.SqlServer;
@@ -28,21 +28,21 @@ public sealed class DatabaseProviderResolver : IDatabaseProviderResolver
     }
 
     private static bool ContainsSqlServerMarkers(string cs) =>
-        cs.Contains("server=") && cs.Contains("database=") && !cs.Contains("port=") && !cs.Contains("host=")
-        || cs.Contains("data source=") && cs.Contains("initial catalog=")
-        || cs.Contains("sqlserver", StringComparison.OrdinalIgnoreCase);
+        cs.Contains("SERVER=", StringComparison.Ordinal) && cs.Contains("DATABASE=", StringComparison.Ordinal) && !cs.Contains("PORT=", StringComparison.Ordinal) && !cs.Contains("HOST=", StringComparison.Ordinal)
+        || cs.Contains("DATA SOURCE=", StringComparison.Ordinal) && cs.Contains("INITIAL CATALOG=", StringComparison.Ordinal)
+        || cs.Contains("SQLSERVER", StringComparison.Ordinal);
 
     private static bool ContainsPostgresMarkers(string cs) =>
-        cs.Contains("host=") && cs.Contains("database=") && !cs.Contains("data source=")
-        || cs.Contains("npgsql")
-        || cs.Contains("postgres");
+        cs.Contains("HOST=", StringComparison.Ordinal) && cs.Contains("DATABASE=", StringComparison.Ordinal) && !cs.Contains("DATA SOURCE=", StringComparison.Ordinal)
+        || cs.Contains("NPGSQL", StringComparison.Ordinal)
+        || cs.Contains("POSTGRES", StringComparison.Ordinal);
 
     private static bool ContainsMySqlMarkers(string cs) =>
-        cs.Contains("server=") && cs.Contains("database=") && cs.Contains("port=")
-        || cs.Contains("mysql");
+        cs.Contains("SERVER=", StringComparison.Ordinal) && cs.Contains("DATABASE=", StringComparison.Ordinal) && cs.Contains("PORT=", StringComparison.Ordinal)
+        || cs.Contains("MYSQL", StringComparison.Ordinal);
 
     private static bool ContainsOracleMarkers(string cs) =>
-        cs.Contains("data source=") && cs.Contains("user id=")
-        || cs.Contains("oracle")
-        || cs.Contains("tns_admin");
+        cs.Contains("DATA SOURCE=", StringComparison.Ordinal) && cs.Contains("USER ID=", StringComparison.Ordinal)
+        || cs.Contains("ORACLE", StringComparison.Ordinal)
+        || cs.Contains("TNS_ADMIN", StringComparison.Ordinal);
 }

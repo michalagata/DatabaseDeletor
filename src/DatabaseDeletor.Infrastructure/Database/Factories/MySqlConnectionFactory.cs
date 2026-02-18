@@ -12,7 +12,10 @@ public sealed class MySqlConnectionFactory : IDbConnectionFactory
     public IDbConnection CreateConnection(string connectionString) =>
         new MySqlConnection(connectionString);
 
-    public bool CanHandle(string connectionString) =>
-        connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase)
-        && connectionString.Contains("Port=", StringComparison.OrdinalIgnoreCase);
+    public bool CanHandle(string connectionString)
+    {
+        ArgumentNullException.ThrowIfNull(connectionString);
+        return connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase)
+            && connectionString.Contains("Port=", StringComparison.OrdinalIgnoreCase);
+    }
 }

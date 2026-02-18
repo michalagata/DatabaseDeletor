@@ -12,8 +12,11 @@ public sealed class SqlServerConnectionFactory : IDbConnectionFactory
     public IDbConnection CreateConnection(string connectionString) =>
         new SqlConnection(connectionString);
 
-    public bool CanHandle(string connectionString) =>
-        connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase)
-        && connectionString.Contains("Database=", StringComparison.OrdinalIgnoreCase)
-        && !connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase);
+    public bool CanHandle(string connectionString)
+    {
+        ArgumentNullException.ThrowIfNull(connectionString);
+        return connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase)
+            && connectionString.Contains("Database=", StringComparison.OrdinalIgnoreCase)
+            && !connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase);
+    }
 }

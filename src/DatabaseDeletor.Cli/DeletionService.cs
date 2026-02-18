@@ -6,7 +6,7 @@ using Serilog;
 
 namespace DatabaseDeletor.Cli;
 
-public sealed class DeletionService
+internal sealed class DeletionService
 {
     private readonly IServiceProvider _services;
 
@@ -34,7 +34,7 @@ public sealed class DeletionService
         // Step 2: Analyze dependencies
         ConsoleRenderer.WriteStep(2, "Analyzing table dependencies...");
         var graph = await mediator.SendAsync(
-            new AnalyzeDependenciesCommand(connectionString, parsed.Schema, parsed.TableName), ct);
+            new AnalyzeDependenciesCommand(connectionString, parsed.Schema, parsed.TableName), ct).ConfigureAwait(false);
 
         ConsoleRenderer.WriteInfo($"Found {graph.Tables.Count} related table(s).");
 
@@ -45,7 +45,7 @@ public sealed class DeletionService
             string.Equals(t.Name, parsed.TableName, StringComparison.OrdinalIgnoreCase));
 
         var plan = await mediator.SendAsync(
-            new GenerateDeletionPlanCommand(connectionString, graph, rootTable, parsed.WhereClause), ct);
+            new GenerateDeletionPlanCommand(connectionString, graph, rootTable, parsed.WhereClause), ct).ConfigureAwait(false);
 
         // Step 4: Display plan and confirm
         ConsoleRenderer.WriteDeletionPlan(plan);
@@ -66,8 +66,8 @@ public sealed class DeletionService
         var report = await ConsoleRenderer.ExecuteWithProgressBar(async progress =>
         {
             return await mediator.SendAsync(
-                new ExecuteDeletionCommand(connectionString, plan, progress), ct);
-        }, plan.TotalEstimatedRows);
+                new ExecuteDeletionCommand(connectionString, plan, progress), ct).ConfigureAwait(false);
+        }, plan.TotalEstimatedRows).ConfigureAwait(false);
 
         // Step 6: Display report
         ConsoleRenderer.WriteStep(6, "Generating report...");

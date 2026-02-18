@@ -85,3 +85,21 @@ Updated: 2026-02-18
 - GPU required for AI serving
 - spec.txt and extend.txt do NOT exist in repo
 - No source code exists yet -- greenfield project
+
+### Decision: ADR-006 -- System.CommandLine 2.0.0-beta5.25306.1 API patterns
+- **Date:** 2026-02-18
+- **Context:** Need to use System.CommandLine for CLI; beta5 has breaking changes from beta4 and earlier
+- **Decision:** Use the beta5 API surface as documented in the NuGet package XML docs
+- **Key API patterns:**
+  - `Option<T>(name, aliases)` — NO description parameter in constructor
+  - `option.Description = "..."` — set description via property
+  - `option.Required = true` — set required via property
+  - `command.Add(option)` — add options via Add() method (not AddOption)
+  - `command.SetAction(async (ParseResult result, CancellationToken ct) => ...)` — set handler via SetAction (NOT SetHandler)
+  - `result.GetValue<T>(option)` / `result.GetRequiredValue<T>(option)` — get parsed values
+  - `new CommandLineConfiguration(rootCommand)` — wrap command for invocation
+  - `config.InvokeAsync(args, ct)` — invoke the command (NOT command.InvokeAsync)
+  - `ParseResult.InvokeAsync(ct)` and `ParseResult.Invoke()` also available
+  - No `Handler` property; use `Action` property or `SetAction()` method
+- **Alternatives considered:** Older beta4 API (rejected, incompatible with installed version)
+- **Consequences:** Must NOT use deprecated patterns (SetHandler, AddOption, description in Option ctor)

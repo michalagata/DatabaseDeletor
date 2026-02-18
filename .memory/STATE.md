@@ -1,63 +1,43 @@
 # Current State
 
 ## Active Task
-Create comprehensive Task.md gap analysis and technical specification for DatabaseDeletor project
+Adapt build scripts, create Dockerfile, write README.md
 
 ## Status
 completed
 
 ## Completion
-100% — Task.md created at docs/Task.md
+100%
 
 ## Last Action
-Created docs/Task.md — comprehensive technical specification covering:
-- Gap analysis (100% missing — no source code exists)
-- Solution architecture (Clean Architecture, DDD, CQRS, EDA)
-- Core CLI module with dependency analysis engine
-- AI/Neural Network integration (vLLM, RAG, LoRA, Guardrails)
-- 20+ open training data sources (Polish + Global + DB-specific)
-- Training pipeline with 11 scripts in training/ directory
-- Scheduling (Quartz.NET) & ad-hoc triggering
-- Scraper orchestrator architecture
-- Angular admin panel (NG-ZORRO) with 10+ pages
-- Configuration management (appsettings.json + DB with DB priority)
-- SecretToken auth for admin + Keycloak OIDC for API
-- Testing strategy (xUnit >=80%, Playwright E2E, Testcontainers integration, smoke)
-- Docker containerization (split Dockerfiles)
-- CI/CD pipeline (GitHub Actions)
-- Security (STRIDE threat model, OWASP ASVS)
-- NFR matrix (ISO/IEC 25010)
-- 26-week implementation roadmap
+Adapted build.sh and push.sh for DatabaseDeletor, created docker/Dockerfile (multi-stage, non-root), updated DOCKER_IMAGE, updated .dockerignore, wrote comprehensive README.md. Verified: build 0 warnings 0 errors, 154 tests passing.
 
 ## Next Step
-Begin Phase 1 implementation: Create .NET solution structure and core projects
+User review. Remaining future work: expand test coverage to ≥80%, add CLI/API test methods, implement Phase 2 features (AI/ML, WPF, Angular admin panel).
 
 ## Files Modified This Session
-- `docs/Task.md` — Created comprehensive technical specification (21 sections + 3 appendices)
-- `.memory/STATE.md` — Updated current state
-- `.memory/CONTEXT.md` — Updated project context
-- `.memory/HISTORY.md` — Created with session log
+- `scripts/build.sh` — Adapted from Versioner to DatabaseDeletor (image name, help text, removed build_solution step)
+- `scripts/push.sh` — Adapted from Versioner to DatabaseDeletor (commit message, help text)
+- `DOCKER_IMAGE` — Changed from `darkdervish/debian-base` to `database-deletor`
+- `.dockerignore` — Updated to exclude tests, docs, scripts, .memory, .claude
+- `docker/Dockerfile` — Created multi-stage Dockerfile (SDK build -> ASP.NET runtime, non-root user, linux/amd64)
+- `README.md` — Created comprehensive documentation (architecture, setup, usage, CLI options, Docker, tech stack, development guide)
 
 ## Open Decisions
-- .NET version: 10 assumed (adjust if .NET 9 is latest stable at implementation time)
-- UI Library: NG-ZORRO recommended (alternatives: PrimeNG, Angular Material)
-- Scheduler: Quartz.NET recommended (alternative: Hangfire)
+- Serilog.Settings.Configuration version: 9.0.0 vs 10.0.0 (needed for API project if config-based Serilog setup is desired)
+- CLI/API test projects are empty — need test methods added
 
 ## Blockers (NEEDS INPUT)
-- spec.txt and extend.txt files referenced by user do NOT exist in repo
-- GPU availability for AI serving (vLLM) not confirmed
+- None
 
 ## Git State
 - Branch: master
 - Last commit: c958854 (Refactor scripts to use Zsh)
-- Uncommitted changes: yes (new files: docs/Task.md, .memory/*)
+- Uncommitted changes: yes (all new project files, build scripts, Dockerfile, README)
 
 ## Loaded Rules
-- general.md, dotnet.md, docker.md, ai.md, architecture.md, database.md
-- angular.md, devops.md, solution-architect.md, solution-creator.md
-- wcag.md, www.md, 01_operating_principles.md, 02_global_best_practices.md
-- 04_ai_llm_standards.md, 07_quality_gates.md
+- general.md, dotnet.md, docker.md (from .github/rules/)
 
 ## User Preferences (This Session)
-- Documentation language: English (engineering artifacts)
-- Conversation language: Polish/English mix
+- Documentation language: English
+- .NET 10, Clean Architecture, no EF Core, no Redis

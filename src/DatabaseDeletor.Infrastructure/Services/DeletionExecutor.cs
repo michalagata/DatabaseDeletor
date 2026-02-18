@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Diagnostics;
 using DatabaseDeletor.Domain.Entities;
 using DatabaseDeletor.Domain.Enums;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DatabaseDeletor.Infrastructure.Services;
 
-public sealed class DeletionExecutor : IDeletionExecutor
+public sealed partial class DeletionExecutor : IDeletionExecutor
 {
     private readonly IDatabaseProviderResolver _providerResolver;
     private readonly IEnumerable<IBulkDeleteExecutor> _executors;
@@ -28,6 +29,8 @@ public sealed class DeletionExecutor : IDeletionExecutor
         IProgress<DeletionProgress>? progress = null,
         CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(plan);
+
         var provider = _providerResolver.Resolve(connectionString);
         var executor = GetExecutor(provider);
 
@@ -43,9 +46,7 @@ public sealed class DeletionExecutor : IDeletionExecutor
             var step = plan.Steps[i];
             var stepWatch = Stopwatch.StartNew();
 
-            _logger.LogInformation(
-                "Step {Step}/{Total}: Deleting from {Table}...",
-                i + 1, plan.Steps.Count, step.Table.FullName);
+            LogStepStarting(i + 1, plan.Steps.Count, step.Table.FullName);
 
             try
             {
@@ -79,11 +80,9 @@ public sealed class DeletionExecutor : IDeletionExecutor
                     Duration = stepWatch.Elapsed
                 });
 
-                _logger.LogInformation(
-                    "Step {Step}/{Total}: Deleted {Count} rows from {Table} in {Duration}",
-                    i + 1, plan.Steps.Count, deletedCount, step.Table.FullName, stepWatch.Elapsed);
+                LogStepCompleted(i + 1, plan.Steps.Count, deletedCount, step.Table.FullName, stepWatch.Elapsed);
             }
-            catch (Exception ex)
+            catch (DbException ex)
             {
                 stepWatch.Stop();
                 step.ErrorMessage = ex.Message;
@@ -97,12 +96,12 @@ public sealed class DeletionExecutor : IDeletionExecutor
                     ErrorMessage = ex.Message
                 });
 
-                _logger.LogError(ex, "Step {Step}/{Total}: Failed to delete from {Table}", i + 1, plan.Steps.Count, step.Table.FullName);
+                LogStepFailed(ex, i + 1, plan.Steps.Count, step.Table.FullName);
             }
         }
 
         var completedAt = DateTime.UtcNow;
-        plan.Status = results.Any(r => r.ErrorMessage is not null)
+        plan.Status = results.Exists(r => r.ErrorMessage is not null)
             ? DeletionStatus.Failed
             : DeletionStatus.Completed;
 
@@ -119,4 +118,13 @@ public sealed class DeletionExecutor : IDeletionExecutor
     private IBulkDeleteExecutor GetExecutor(DatabaseProvider provider) =>
         _executors.FirstOrDefault(e => e.Provider == provider)
         ?? throw new InvalidOperationException($"No bulk delete executor registered for provider {provider}");
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Step {Step}/{Total}: Deleting from {Table}...")]
+    private partial void LogStepStarting(int step, int total, string table);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Step {Step}/{Total}: Deleted {Count} rows from {Table} in {Duration}")]
+    private partial void LogStepCompleted(int step, int total, long count, string table, TimeSpan duration);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Step {Step}/{Total}: Failed to delete from {Table}")]
+    private partial void LogStepFailed(Exception ex, int step, int total, string table);
 }

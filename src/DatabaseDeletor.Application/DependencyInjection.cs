@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace DatabaseDeletor.Application;
 
+#pragma warning disable CA1724 // Type name conflicts with namespace — standard .NET DI extension pattern
 public static class DependencyInjection
+#pragma warning restore CA1724
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {

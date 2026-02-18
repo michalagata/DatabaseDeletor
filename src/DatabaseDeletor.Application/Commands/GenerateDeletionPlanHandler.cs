@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DatabaseDeletor.Application.Commands;
 
-public sealed class GenerateDeletionPlanHandler : IRequestHandler<GenerateDeletionPlanCommand, DeletionPlan>
+public sealed partial class GenerateDeletionPlanHandler : IRequestHandler<GenerateDeletionPlanCommand, DeletionPlan>
 {
     private readonly IDeletionPlanGenerator _planGenerator;
     private readonly ILogger<GenerateDeletionPlanHandler> _logger;
@@ -17,9 +17,9 @@ public sealed class GenerateDeletionPlanHandler : IRequestHandler<GenerateDeleti
 
     public async Task<DeletionPlan> HandleAsync(GenerateDeletionPlanCommand request, CancellationToken ct = default)
     {
-        _logger.LogInformation(
-            "Generating deletion plan for {Table} with WHERE: {Where}",
-            request.RootTable.FullName, request.WhereClause ?? "(all rows)");
+        ArgumentNullException.ThrowIfNull(request);
+
+        LogGenerating(request.RootTable.FullName, request.WhereClause ?? "(all rows)");
 
         var plan = await _planGenerator.GenerateAsync(
             request.ConnectionString,
@@ -28,10 +28,14 @@ public sealed class GenerateDeletionPlanHandler : IRequestHandler<GenerateDeleti
             request.WhereClause,
             ct).ConfigureAwait(false);
 
-        _logger.LogInformation(
-            "Deletion plan generated: {StepCount} steps, ~{RowCount} estimated rows",
-            plan.Steps.Count, plan.TotalEstimatedRows);
+        LogGenerated(plan.Steps.Count, plan.TotalEstimatedRows);
 
         return plan;
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Generating deletion plan for {Table} with WHERE: {Where}")]
+    private partial void LogGenerating(string table, string where);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Deletion plan generated: {StepCount} steps, ~{RowCount} estimated rows")]
+    private partial void LogGenerated(int stepCount, long rowCount);
 }

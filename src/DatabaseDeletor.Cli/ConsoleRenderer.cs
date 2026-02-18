@@ -1,9 +1,10 @@
+using System.Globalization;
 using DatabaseDeletor.Domain.Entities;
 using Spectre.Console;
 
 namespace DatabaseDeletor.Cli;
 
-public static class ConsoleRenderer
+internal static class ConsoleRenderer
 {
     public static void WriteHeader()
     {
@@ -37,6 +38,8 @@ public static class ConsoleRenderer
 
     public static void WriteDeletionPlan(DeletionPlan plan)
     {
+        ArgumentNullException.ThrowIfNull(plan);
+
         AnsiConsole.WriteLine();
         AnsiConsole.Write(new Rule("[bold yellow]Deletion Plan[/]").RuleStyle("grey"));
 
@@ -54,15 +57,15 @@ public static class ConsoleRenderer
                 : step.DeleteSql;
 
             table.AddRow(
-                (step.Order + 1).ToString(),
+                (step.Order + 1).ToString(CultureInfo.InvariantCulture),
                 Markup.Escape(step.Table.FullName),
-                step.EstimatedRowCount.ToString("N0"),
+                step.EstimatedRowCount.ToString("N0", CultureInfo.InvariantCulture),
                 Markup.Escape(sqlPreview));
         }
 
         AnsiConsole.Write(table);
 
-        AnsiConsole.MarkupLine($"\n  [bold]Total estimated rows to delete:[/] [red]{plan.TotalEstimatedRows:N0}[/]");
+        AnsiConsole.MarkupLine($"\n  [bold]Total estimated rows to delete:[/] [red]{plan.TotalEstimatedRows.ToString("N0", CultureInfo.InvariantCulture)}[/]");
         AnsiConsole.MarkupLine($"  [bold]Root table:[/] {Markup.Escape(plan.RootTable.FullName)}");
         AnsiConsole.MarkupLine($"  [bold]WHERE clause:[/] {Markup.Escape(plan.WhereClause ?? "(all rows)")}");
         AnsiConsole.WriteLine();
@@ -109,17 +112,19 @@ public static class ConsoleRenderer
                     currentStepTask.Description = $"[blue]{Markup.Escape(p.CurrentTable.FullName)}[/]";
                 });
 
-                report = await action(progress);
+                report = await action(progress).ConfigureAwait(false);
 
                 overallTask.Value = overallTask.MaxValue;
                 currentStepTask.Value = currentStepTask.MaxValue;
-            });
+            }).ConfigureAwait(false);
 
         return report!;
     }
 
     public static void WriteDeletionReport(DeletionReport report)
     {
+        ArgumentNullException.ThrowIfNull(report);
+
         AnsiConsole.WriteLine();
         AnsiConsole.Write(new Rule("[bold green]Deletion Report[/]").RuleStyle("grey"));
 
@@ -138,16 +143,16 @@ public static class ConsoleRenderer
 
             table.AddRow(
                 Markup.Escape(result.Table.FullName),
-                result.DeletedCount.ToString("N0"),
-                result.Duration.ToString(@"hh\:mm\:ss\.fff"),
+                result.DeletedCount.ToString("N0", CultureInfo.InvariantCulture),
+                result.Duration.ToString(@"hh\:mm\:ss\.fff", CultureInfo.InvariantCulture),
                 status);
         }
 
         AnsiConsole.Write(table);
 
         AnsiConsole.WriteLine();
-        AnsiConsole.MarkupLine($"  [bold]Total rows deleted:[/] [green]{report.TotalDeletedRows:N0}[/]");
-        AnsiConsole.MarkupLine($"  [bold]Total duration:[/] {report.TotalDuration:hh\\:mm\\:ss\\.fff}");
+        AnsiConsole.MarkupLine($"  [bold]Total rows deleted:[/] [green]{report.TotalDeletedRows.ToString("N0", CultureInfo.InvariantCulture)}[/]");
+        AnsiConsole.MarkupLine($"  [bold]Total duration:[/] {report.TotalDuration.ToString(@"hh\:mm\:ss\.fff", CultureInfo.InvariantCulture)}");
         AnsiConsole.MarkupLine($"  [bold]Status:[/] {(report.HasErrors ? "[red]Completed with errors[/]" : "[green]Success[/]")}");
         AnsiConsole.WriteLine();
     }

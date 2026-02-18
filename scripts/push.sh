@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# Git push script for Versioner project
+# Git push script for DatabaseDeletor project
 
 set -Eeuo pipefail
 IFS=$'\n\t'
@@ -40,7 +40,7 @@ log_error() {
 # Help function
 show_help() {
     cat << EOF
-Versioner Git Push Script
+DatabaseDeletor Git Push Script
 
 Usage: $0 [OPTIONS]
 
@@ -54,7 +54,7 @@ OPTIONS:
 
 EXAMPLES:
     $0                                    # Push current branch with auto message
-    $0 -m "Fix versioning bug"            # Push with custom message
+    $0 -m "Fix dependency analysis bug"   # Push with custom message
     $0 -b main -r upstream                # Push main branch to upstream
     $0 -t                                 # Push current branch and tags
 
@@ -107,19 +107,19 @@ parse_args() {
 # Validate environment
 validate_environment() {
     log_info "Validating environment..."
-    
+
     # Check if we're in a git repository
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
         log_error "Not in a git repository"
         exit 1
     fi
-    
+
     # Check if git is available
     if ! command -v git &> /dev/null; then
         log_error "Git is not installed or not in PATH"
         exit 1
     fi
-    
+
     # Get current branch if not specified
     if [[ -z "$BRANCH" ]]; then
         BRANCH=$(git branch --show-current)
@@ -128,36 +128,36 @@ validate_environment() {
             exit 1
         fi
     fi
-    
+
     # Check if branch exists
     if ! git show-ref --verify --quiet "refs/heads/$BRANCH"; then
         log_error "Branch '$BRANCH' does not exist"
         exit 1
     fi
-    
+
     # Check if remote exists
     if ! git remote get-url "$REMOTE" &> /dev/null; then
         log_error "Remote '$REMOTE' does not exist"
         exit 1
     fi
-    
+
     log_success "Environment validation passed"
 }
 
 # Check git status
 check_git_status() {
     log_info "Checking git status..."
-    
+
     # Check if there are any changes
     if git diff --quiet && git diff --cached --quiet; then
         log_warning "No changes to commit"
         return 1
     fi
-    
+
     # Show status
     log_info "Git status:"
     git status --short
-    
+
     return 0
 }
 
@@ -167,29 +167,29 @@ generate_commit_message() {
         echo "$COMMIT_MESSAGE"
         return
     fi
-    
+
     # Generate timestamp
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
+
     # Get git hash
     local git_hash
     git_hash=$(git rev-parse --short HEAD)
-    
+
     # Generate message
-    echo "Versioner: Update at $timestamp ($git_hash)"
+    echo "DatabaseDeletor: Update at $timestamp ($git_hash)"
 }
 
 # Add and commit changes
 commit_changes() {
     local message="$1"
-    
+
     log_info "Adding changes..."
     git add .
-    
+
     log_info "Committing changes..."
     git commit -m "$message"
-    
+
     if [[ $? -eq 0 ]]; then
         log_success "Changes committed successfully"
     else
@@ -204,20 +204,20 @@ push_changes() {
     log_info "Branch: $BRANCH"
     log_info "Remote: $REMOTE"
     log_info "Force: $FORCE"
-    
+
     # Prepare push command
     local push_cmd=("git" "push")
-    
+
     if [[ "$FORCE" == "true" ]]; then
         push_cmd+=("--force")
     fi
-    
+
     push_cmd+=("$REMOTE" "$BRANCH")
-    
+
     # Execute push
     log_info "Executing: ${push_cmd[*]}"
     "${push_cmd[@]}"
-    
+
     if [[ $? -eq 0 ]]; then
         log_success "Changes pushed successfully"
     else
@@ -230,9 +230,9 @@ push_changes() {
 push_tags() {
     if [[ "$PUSH_TAGS" == "true" ]]; then
         log_info "Pushing tags..."
-        
+
         git push "$REMOTE" --tags
-        
+
         if [[ $? -eq 0 ]]; then
             log_success "Tags pushed successfully"
         else
@@ -249,7 +249,7 @@ show_push_info() {
     echo "  Remote: $REMOTE"
     echo "  Remote URL: $(git remote get-url "$REMOTE")"
     echo "  Last commit: $(git log -1 --oneline)"
-    
+
     if [[ "$PUSH_TAGS" == "true" ]]; then
         echo "  Tags: $(git tag --list | tail -5 | tr '\n' ' ')"
     fi
@@ -260,36 +260,36 @@ main() {
     log_info "Starting Git push process..."
     log_info "Project root: $PROJECT_ROOT"
     log_info "Script directory: $SCRIPT_DIR"
-    
+
     # Parse arguments
     parse_args "$@"
-    
+
     # Validate environment
     validate_environment
-    
+
     # Check git status
     if ! check_git_status; then
         log_info "No changes to push"
         exit 0
     fi
-    
+
     # Generate commit message
     local message
     message=$(generate_commit_message)
     log_info "Commit message: $message"
-    
+
     # Commit changes
     commit_changes "$message"
-    
+
     # Push changes
     push_changes
-    
+
     # Push tags
     push_tags
-    
+
     # Show push info
     show_push_info
-    
+
     log_success "Git push process completed successfully!"
 }
 

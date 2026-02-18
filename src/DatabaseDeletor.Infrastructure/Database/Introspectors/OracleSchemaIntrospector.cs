@@ -13,6 +13,9 @@ public sealed class OracleSchemaIntrospector : ISchemaIntrospector
 
     public async Task<TableInfo> GetTableInfoAsync(string connectionString, string schema, string tableName, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(schema);
+        ArgumentNullException.ThrowIfNull(tableName);
+
         using var connection = new OracleConnection(connectionString);
         await connection.OpenAsync(ct).ConfigureAwait(false);
 
@@ -30,6 +33,9 @@ public sealed class OracleSchemaIntrospector : ISchemaIntrospector
 
     public async Task<IReadOnlyList<ForeignKeyInfo>> GetForeignKeysAsync(string connectionString, string schema, string tableName, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(schema);
+        ArgumentNullException.ThrowIfNull(tableName);
+
         using var connection = new OracleConnection(connectionString);
         await connection.OpenAsync(ct).ConfigureAwait(false);
 
@@ -67,6 +73,9 @@ public sealed class OracleSchemaIntrospector : ISchemaIntrospector
 
     public async Task<IReadOnlyList<ForeignKeyInfo>> GetReferencingForeignKeysAsync(string connectionString, string schema, string tableName, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(schema);
+        ArgumentNullException.ThrowIfNull(tableName);
+
         using var connection = new OracleConnection(connectionString);
         await connection.OpenAsync(ct).ConfigureAwait(false);
 
@@ -104,6 +113,9 @@ public sealed class OracleSchemaIntrospector : ISchemaIntrospector
 
     public async Task<long> GetRowCountAsync(string connectionString, string schema, string tableName, string? whereClause = null, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(schema);
+        ArgumentNullException.ThrowIfNull(tableName);
+
         using var connection = new OracleConnection(connectionString);
         await connection.OpenAsync(ct).ConfigureAwait(false);
 

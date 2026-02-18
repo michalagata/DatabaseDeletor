@@ -18,32 +18,37 @@ public sealed class MySqlBulkDeleteExecutor : IBulkDeleteExecutor
         IProgress<long>? progress = null,
         CancellationToken ct = default)
     {
-        await using var connection = new MySqlConnection(connectionString);
-        await connection.OpenAsync(ct).ConfigureAwait(false);
+        ArgumentNullException.ThrowIfNull(deletionStep);
 
-        long totalDeleted = 0;
-
-        if (step.EstimatedRowCount > BatchSize)
+        var connection = new MySqlConnection(connectionString);
+        await using (connection.ConfigureAwait(false))
         {
-            int batchDeleted;
-            do
-            {
-                ct.ThrowIfCancellationRequested();
+            await connection.OpenAsync(ct).ConfigureAwait(false);
 
-                var limitSql = AddLimitClause(step.DeleteSql, BatchSize);
-                batchDeleted = await connection.ExecuteAsync(limitSql).ConfigureAwait(false);
-                totalDeleted += batchDeleted;
+            long totalDeleted = 0;
+
+            if (deletionStep.EstimatedRowCount > BatchSize)
+            {
+                int batchDeleted;
+                do
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    var limitSql = AddLimitClause(deletionStep.DeleteSql, BatchSize);
+                    batchDeleted = await connection.ExecuteAsync(limitSql).ConfigureAwait(false);
+                    totalDeleted += batchDeleted;
+                    progress?.Report(totalDeleted);
+                }
+                while (batchDeleted >= BatchSize);
+            }
+            else
+            {
+                totalDeleted = await connection.ExecuteAsync(deletionStep.DeleteSql).ConfigureAwait(false);
                 progress?.Report(totalDeleted);
             }
-            while (batchDeleted >= BatchSize);
-        }
-        else
-        {
-            totalDeleted = await connection.ExecuteAsync(step.DeleteSql).ConfigureAwait(false);
-            progress?.Report(totalDeleted);
-        }
 
-        return totalDeleted;
+            return totalDeleted;
+        }
     }
 
     private static string AddLimitClause(string deleteSql, int batchSize)

@@ -1,3 +1,4 @@
+using System.Data.Common;
 using DatabaseDeletor.Domain.Entities;
 using DatabaseDeletor.Domain.Enums;
 using DatabaseDeletor.Domain.Interfaces;
@@ -5,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DatabaseDeletor.Infrastructure.Services;
 
-public sealed class DeletionPlanGenerator : IDeletionPlanGenerator
+public sealed partial class DeletionPlanGenerator : IDeletionPlanGenerator
 {
     private readonly IDatabaseProviderResolver _providerResolver;
     private readonly IEnumerable<ISchemaIntrospector> _introspectors;
@@ -28,13 +29,14 @@ public sealed class DeletionPlanGenerator : IDeletionPlanGenerator
         string? whereClause,
         CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(graph);
+
         var provider = _providerResolver.Resolve(connectionString);
         var introspector = GetIntrospector(provider);
 
         var deletionOrder = graph.GetTopologicalDeletionOrder(rootTable);
 
-        _logger.LogInformation("Deletion order: {Order}",
-            string.Join(" -> ", deletionOrder.Select(t => t.FullName)));
+        LogDeletionOrder(string.Join(" -> ", deletionOrder.Select(t => t.FullName)));
 
         var steps = new List<DeletionStep>();
         var order = 0;
@@ -100,7 +102,7 @@ public sealed class DeletionPlanGenerator : IDeletionPlanGenerator
 
             return await introspector.GetRowCountAsync(connectionString, table.Schema, table.Name, null, ct).ConfigureAwait(false);
         }
-        catch
+        catch (DbException)
         {
             return table.RowCount;
         }
@@ -127,4 +129,7 @@ public sealed class DeletionPlanGenerator : IDeletionPlanGenerator
     private ISchemaIntrospector GetIntrospector(DatabaseProvider provider) =>
         _introspectors.FirstOrDefault(i => i.Provider == provider)
         ?? throw new InvalidOperationException($"No schema introspector registered for provider {provider}");
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Deletion order: {Order}")]
+    private partial void LogDeletionOrder(string order);
 }

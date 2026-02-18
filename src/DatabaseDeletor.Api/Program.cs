@@ -1,16 +1,17 @@
+using System.Globalization;
 using DatabaseDeletor.Application;
 using DatabaseDeletor.Infrastructure;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseSerilog((context, configuration) =>
+builder.Host.UseSerilog((_, configuration) =>
 {
     configuration
-        .ReadFrom.Configuration(context.Configuration)
+        .MinimumLevel.Information()
         .Enrich.FromLogContext()
         .Enrich.WithEnvironmentName()
-        .WriteTo.Console();
+        .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture);
 });
 
 builder.Services.AddApplication();
@@ -38,5 +39,7 @@ app.Run();
 
 namespace DatabaseDeletor.Api
 {
-    public partial class Program;
+#pragma warning disable CA1812, CA1852 // Partial Program class required for WebApplicationFactory<Program> in integration tests
+    internal sealed partial class Program;
+#pragma warning restore CA1812, CA1852
 }
