@@ -48,8 +48,11 @@ done
 echo "Solution: $SOLUTION_NAME"
 echo "Projects to publish: ${#FILTERED_CSPROJ_FILES[@]}"
 echo ""
-echo "NOTE: This script detects your platform and installs the appropriate Versioner version"
-echo "      Versioner will be run via: ./Versioner.Cli"
+MAIN_PROJECT="$(find_main_project)"
+MAIN_PROJECT_NAME="$(get_project_name "$MAIN_PROJECT")"
+
+echo "NOTE: This script detects your platform and installs the appropriate version"
+echo "      Executable: ./$MAIN_PROJECT_NAME"
 echo "      Make sure to run the appropriate build script first (_performBuildMacOS.sh, etc.)"
 echo ""
 
@@ -176,34 +179,22 @@ for package in $CREATED_PACKAGES; do
 done
 echo "  All packages are Release builds ✓"
 
-# 4. Remove existing versioner installation
+# 4. Remove existing tool installation
 echo ""
 echo "✓ Preparing tool installation..."
-echo "  Checking for existing Versioner installation..."
+echo "  Checking for existing $SOLUTION_NAME installation..."
 
 # Check if old installation directory exists
-if [[ -d "$HOME/Apps/Versioner" ]]; then
+if [[ -d "$HOME/Apps/$SOLUTION_NAME" ]]; then
     echo "  Removing old installation directory..."
-    rm -rf "$HOME/Apps/Versioner"
-fi
-
-# Check if versioner wrapper/symlink exists in /usr/local/bin
-if [[ -f "/usr/local/bin/versioner" ]] || [[ -L "/usr/local/bin/versioner" ]]; then
-    echo "  Removing existing /usr/local/bin/versioner..."
-    sudo rm -f /usr/local/bin/versioner
-fi
-
-# Also check for dotnet tool installation
-if dotnet tool list --global | grep -q "versioner" 2>/dev/null; then
-    echo "  Uninstalling dotnet tool versioner..."
-    dotnet tool uninstall versioner --global 2>/dev/null || true
+    rm -rf "$HOME/Apps/$SOLUTION_NAME"
 fi
 
 echo "  Ready for installation ✓"
 
-# 5. Install versioner from platform-specific build artifacts
+# 5. Install tool from platform-specific build artifacts
 echo ""
-echo "✓ Installing Versioner from build artifacts..."
+echo "✓ Installing $SOLUTION_NAME from build artifacts..."
 
 # Auto-detect current platform and architecture
 CURRENT_PLATFORM="$(detect_platform)"
@@ -220,18 +211,18 @@ echo "  Detected runtime ID: $CURRENT_RUNTIME_ID"
 case "$CURRENT_PLATFORM" in
     linux)
         PUBLISH_DIR="$PROJECT_ROOT/DEPLOYMENT/net10.0/linux-x64/publish"
-        ARTIFACT_NAME="Versioner.Linux.zip"
+        ARTIFACT_NAME="${SOLUTION_NAME}.Linux.zip"
         PLATFORM_DISPLAY="Linux"
         ;;
     windows)
         PUBLISH_DIR="$PROJECT_ROOT/DEPLOYMENT/net10.0/win-x64/publish"
-        ARTIFACT_NAME="Versioner.Windows.zip"
+        ARTIFACT_NAME="${SOLUTION_NAME}.Windows.zip"
         PLATFORM_DISPLAY="Windows"
         ;;
     macos)
         # Use the detected runtime ID (osx-arm64 or osx-x64)
         PUBLISH_DIR="$PROJECT_ROOT/DEPLOYMENT/net10.0/$CURRENT_RUNTIME_ID/publish"
-        ARTIFACT_NAME="Versioner.macOS.zip"
+        ARTIFACT_NAME="${SOLUTION_NAME}.macOS.zip"
         PLATFORM_DISPLAY="macOS ($CURRENT_RUNTIME_ID)"
         ;;
     *)
@@ -250,7 +241,7 @@ PLATFORM_ZIP="$PROJECT_ROOT/DEPLOYMENT/$ARTIFACT_NAME"
 if [[ -f "$PLATFORM_ZIP" ]]; then
     echo "  Using platform-specific ZIP artifact: $PLATFORM_ZIP"
     SOURCE_TYPE="zip"
-elif [[ -d "$PUBLISH_DIR" ]] && [[ -f "$PUBLISH_DIR/Versioner.Cli" || -f "$PUBLISH_DIR/Versioner.Cli.exe" ]]; then
+elif [[ -d "$PUBLISH_DIR" ]] && [[ -f "$PUBLISH_DIR/$MAIN_PROJECT_NAME" || -f "$PUBLISH_DIR/${MAIN_PROJECT_NAME}.exe" ]]; then
     echo "  Using modern publish directory: $PUBLISH_DIR"
     echo "  WARNING: This may not include native runtime libraries"
     SOURCE_TYPE="directory"
@@ -285,25 +276,25 @@ fi
 
 # Verify the executable exists
 if [[ "$CURRENT_PLATFORM" == "windows" ]]; then
-    VERSIONER_EXECUTABLE="$TEMP_EXTRACT_DIR/Versioner.Cli.exe"
+    CLI_EXECUTABLE="$TEMP_EXTRACT_DIR/${MAIN_PROJECT_NAME}.exe"
 else
-    VERSIONER_EXECUTABLE="$TEMP_EXTRACT_DIR/Versioner.Cli"
+    CLI_EXECUTABLE="$TEMP_EXTRACT_DIR/$MAIN_PROJECT_NAME"
 fi
 
-if [[ ! -f "$VERSIONER_EXECUTABLE" ]]; then
-    error "Versioner.Cli executable not found in extracted files"
-    error "Expected: $VERSIONER_EXECUTABLE"
+if [[ ! -f "$CLI_EXECUTABLE" ]]; then
+    error "$MAIN_PROJECT_NAME executable not found in extracted files"
+    error "Expected: $CLI_EXECUTABLE"
     ls -la "$TEMP_EXTRACT_DIR" | head -20
     exit 1
 fi
 
-echo "  Found Versioner.Cli executable ✓"
+echo "  Found $MAIN_PROJECT_NAME executable ✓"
 
 # Verify binary architecture
 if [[ "$CURRENT_PLATFORM" == "macos" || "$CURRENT_PLATFORM" == "linux" ]]; then
     echo "  Verifying binary architecture..."
     if command -v file &> /dev/null; then
-        file_output=$(file "$VERSIONER_EXECUTABLE")
+        file_output=$(file "$CLI_EXECUTABLE")
         echo "  Binary info: $file_output"
         
         if [[ "$CURRENT_PLATFORM" == "macos" ]]; then
@@ -335,7 +326,7 @@ fi
 
 
 # Copy all files to installation directory
-INSTALL_DIR="$HOME/Apps/Versioner"
+INSTALL_DIR="$HOME/Apps/$SOLUTION_NAME"
 echo "  Installing to: $INSTALL_DIR"
 
 # Create installation directory
@@ -347,32 +338,28 @@ cp -r "$TEMP_EXTRACT_DIR/"* "$INSTALL_DIR/"
 
 echo "  Binaries installed ✓"
 
-# 6. Verify Versioner installation
+# 6. Verify tool installation
 echo ""
-echo "✓ Verifying Versioner installation..."
+echo "✓ Verifying $SOLUTION_NAME installation..."
 
-# Verify DLL exists
-if [[ ! -f "$INSTALL_DIR/Versioner.Cli.dll" ]]; then
-    error "Versioner.Cli.dll not found in installation directory"
-    error "Expected: $INSTALL_DIR/Versioner.Cli.dll"
-    exit 1
-fi
-echo "  Versioner.Cli.dll verified ✓"
-
-# Test if dotnet can run the DLL (with a quick version check that will fail gracefully)
-echo "  Testing Versioner execution via dotnet..."
-if dotnet --info &> /dev/null; then
-    echo "  .NET runtime available ✓"
+# Verify executable exists
+if [[ "$CURRENT_PLATFORM" == "windows" ]]; then
+    local installed_exe="$INSTALL_DIR/${MAIN_PROJECT_NAME}.exe"
 else
-    error ".NET runtime not available"
+    local installed_exe="$INSTALL_DIR/$MAIN_PROJECT_NAME"
+fi
+
+if [[ ! -f "$installed_exe" ]]; then
+    error "$MAIN_PROJECT_NAME executable not found in installation directory"
+    error "Expected: $installed_exe"
     exit 1
 fi
-echo "  Versioner DLL file verified ✓"
+echo "  $MAIN_PROJECT_NAME executable verified ✓"
 
 echo ""
 echo "  Installation completed successfully"
-echo "  To use Versioner, run:"
-echo "  $INSTALL_DIR/Versioner.Cli -w /path/to/project"
+echo "  To use $SOLUTION_NAME, run:"
+echo "  $installed_exe"
 echo ""
 
 echo ""
@@ -396,10 +383,9 @@ echo "Validation summary:"
 echo "  ✓ Output directory cleaned"
 echo "  ✓ Release builds verified"
 echo "  ✓ Packages created ($PACKAGE_COUNT)"
-echo "  ✓ Versioner installed to $INSTALL_DIR"
-echo "  ✓ Versioner runs via: ./Versioner.Cli"
+echo "  ✓ $SOLUTION_NAME installed to $INSTALL_DIR"
 echo ""
-echo "To use: $INSTALL_DIR/Versioner.Cli -w /path/to/project"
+echo "To use: $INSTALL_DIR/$MAIN_PROJECT_NAME"
 echo "========================================"
 
 # Run cleanup after successful publish (unless --no-cleanup flag was used)

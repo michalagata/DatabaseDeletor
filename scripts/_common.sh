@@ -389,6 +389,24 @@ get_platform_project() {
     echo "$project"
 }
 
+# Detect current platform (linux, windows, macos)
+detect_platform() {
+    local os
+    os="$(uname -s 2>/dev/null || echo "Linux")"
+    case "$os" in
+        Linux)   echo "linux" ;;
+        Darwin)  echo "macos" ;;
+        MINGW*|MSYS*|CYGWIN*) echo "windows" ;;
+        *)       echo "linux" ;;
+    esac
+}
+
+# Find all .csproj files in the project (including test projects)
+find_csproj_files() {
+    find "$PROJECT_ROOT" -maxdepth 4 -name "*.csproj" -type f 2>/dev/null | \
+        grep -v -E "/(obj|bin)/" | sort
+}
+
 # =============================================================================
 # Build & Test Functions
 # =============================================================================
@@ -705,6 +723,7 @@ export -f error info success warning step log_header timestamp
 export -f is_dotnet_project find_solution_files get_solution_file get_solution_name
 export -f find_all_projects find_non_test_projects find_main_project find_library_projects find_test_projects
 export -f detect_project_type get_project_name get_target_framework get_assembly_name get_runtime_id
+export -f detect_platform find_csproj_files
 export -f get_platform_project run_restore run_build run_tests run_unit_tests run_publish
 export -f check_dotnet check_git check_docker
 export -f cleanup_bak_files cleanup_build_artifacts show_project_summary

@@ -101,8 +101,8 @@ log_step() {
 validate_environment() {
   log_info "Walidacja środowiska..."
   
-  # Sprawdź, czy jesteśmy w katalogu projektu
-  if [[ ! -f "$PROJECT_ROOT/Versioner.sln" ]] && [[ -z "$(find "$PROJECT_ROOT" -maxdepth 2 -name "*.csproj" -type f)" ]]; then
+  # Sprawdź, czy jesteśmy w katalogu projektu (.sln lub .csproj)
+  if [[ -z "$(find "$PROJECT_ROOT" -maxdepth 2 -name "*.sln" -type f 2>/dev/null)" ]] && [[ -z "$(find "$PROJECT_ROOT" -maxdepth 2 -name "*.csproj" -type f 2>/dev/null)" ]]; then
     log_error "Nie znaleziono projektu .NET w katalogu: $PROJECT_ROOT"
     exit 1
   fi
@@ -530,8 +530,10 @@ detect_github_repo() {
     github_repo="${match[1]}/${match[2]}"
   # Format Custom SSH with port (np. anubisworks)
   elif [[ "$remote_url" =~ ssh://git@[^/]+:[0-9]+/([^/]+)/([^/]+)\.git ]]; then
-    # Hardcode dla specyficznego środowiska użytkownika, gdzie remote to anubisworks, ale release ma iść na michalagata
-    github_repo="michalagata/Versioner"
+    # Auto-detect solution name for GitHub repo mapping
+    local sln_name
+    sln_name="$(find "$PROJECT_ROOT" -maxdepth 1 -name "*.sln" -type f 2>/dev/null | head -1 | xargs basename 2>/dev/null | sed 's/\.sln$//' || echo "")"
+    github_repo="michalagata/${sln_name:-$(basename "$PROJECT_ROOT")}"
     log_info "Wykryto środowisko anubisworks, używanie mapowania na: $github_repo"
   # Format HTTPS bez .git: https://github.com/owner/repo
   elif [[ "$remote_url" =~ https://github\.com/([^/]+)/([^/]+)$ ]]; then
@@ -657,16 +659,34 @@ step_version_artifacts() {
   log_step "KROK 1: Wersjonowanie artefaktów"
   
   log_info "Uruchamianie: $VERSION_SCRIPT"
-  
+
+  # Sprawdź czy version.txt już istnieje — jeśli tak, wersjonowanie jest opcjonalne
+  local version_txt_exists=false
+  if [[ -f "$PROJECT_ROOT/version.txt" ]]; then
+    local existing_version
+    existing_version="$(cat "$PROJECT_ROOT/version.txt" | tr -d ' \t\r\n' || echo "")"
+    if [[ -n "$existing_version" ]]; then
+      version_txt_exists=true
+      log_info "Znaleziono istniejący version.txt z wersją: $existing_version"
+    fi
+  fi
+
   # Uruchom wersjonowanie - przechwytuj output dla analizy błędów
   local version_exit_code=0
   local version_output=""
   local version_tmpfile
   version_tmpfile=$(mktemp)
-  
+
   "$VERSION_SCRIPT" -w "$PROJECT_ROOT" 2>&1 | tee "$version_tmpfile" || version_exit_code=$?
   version_output=$(cat "$version_tmpfile")
   rm -f "$version_tmpfile"
+
+  # Jeśli Versioner nie powiódł się ale version.txt istnieje, kontynuuj
+  if [[ $version_exit_code -ne 0 && "$version_txt_exists" == "true" ]]; then
+    log_warning "Versioner nie powiódł się (exit code: $version_exit_code), ale version.txt istnieje"
+    log_warning "Kontynuowanie z istniejącą wersją z version.txt"
+    return 0
+  fi
   
   # KRYTYCZNE: Sprawdź czy wystąpił BadImageFormatException
   if echo "$version_output" | grep -q "BadImageFormatException"; then
@@ -816,12 +836,12 @@ cleanup_test_resources() {
   local cleaned_count=0
   local failed_count=0
   
-  # 1. Usuń tymczasowe katalogi testowe VersionerTests_*
-  log_info "Czyszczenie katalogów testowych VersionerTests_* z /tmp..."
+  # 1. Usuń tymczasowe katalogi testowe *Tests_*
+  log_info "Czyszczenie katalogów testowych *Tests_* z /tmp..."
   local temp_dirs=()
   while IFS= read -r -d '' dir; do
     temp_dirs+=("$dir")
-  done < <(find /tmp /var/folders -maxdepth 3 -type d -name "VersionerTests_*" 2>/dev/null | head -100 | tr '\n' '\0')
+  done < <(find /tmp /var/folders -maxdepth 3 -type d -name "*Tests_*" 2>/dev/null | head -100 | tr '\n' '\0')
   
   if (( ${#temp_dirs[@]} > 0 )); then
     log_info "Znaleziono ${#temp_dirs[@]} katalogów testowych do usunięcia"

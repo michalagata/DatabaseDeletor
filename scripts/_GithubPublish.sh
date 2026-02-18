@@ -32,6 +32,7 @@ GITHUB_REPO=""
 VERSION=""
 GITHUB_VERSION=""
 FORCE_RECREATE="false"
+SOLUTION_NAME=""
 
 # ---------- Logging ----------
 timestamp() {
@@ -145,6 +146,28 @@ validate_environment() {
   success "Environment validated"
 }
 
+# ---------- Solution Name Detection ----------
+detect_solution_name() {
+  info "Detecting solution name..."
+
+  local sln_file
+  sln_file="$(find "$REPO_DIR" -maxdepth 2 -name "*.sln" -type f 2>/dev/null | head -n 1)"
+
+  if [[ -n "$sln_file" && -f "$sln_file" ]]; then
+    SOLUTION_NAME="$(basename "$sln_file" .sln)"
+  else
+    # Fallback to directory name
+    SOLUTION_NAME="$(basename "$REPO_DIR")"
+  fi
+
+  # Strip common project suffixes
+  SOLUTION_NAME="${SOLUTION_NAME%.Cli}"
+  SOLUTION_NAME="${SOLUTION_NAME%.Api}"
+  SOLUTION_NAME="${SOLUTION_NAME%.App}"
+
+  success "Solution name: $SOLUTION_NAME"
+}
+
 # ---------- Version Detection ----------
 detect_version() {
   info "Detecting version..."
@@ -205,11 +228,11 @@ validate_artifacts() {
   local deployment_dir="$REPO_DIR/DEPLOYMENT"
   [[ ! -d "$deployment_dir" ]] && die "DEPLOYMENT directory not found: $deployment_dir"
 
-  # Check for platform ZIPs
+  # Check for platform ZIPs (using detected solution name)
   local required_zips=(
-    "$deployment_dir/Versioner.Windows.zip"
-    "$deployment_dir/Versioner.Linux.zip"
-    "$deployment_dir/Versioner.macOS.zip"
+    "$deployment_dir/${SOLUTION_NAME}.Windows.zip"
+    "$deployment_dir/${SOLUTION_NAME}.Linux.zip"
+    "$deployment_dir/${SOLUTION_NAME}.macOS.zip"
   )
 
   local missing_count=0
@@ -292,9 +315,9 @@ create_github_release() {
     --title "$release_title" \
     --notes "$release_notes" \
     --draft=false \
-    "$REPO_DIR/DEPLOYMENT/Versioner.Windows.zip" \
-    "$REPO_DIR/DEPLOYMENT/Versioner.Linux.zip" \
-    "$REPO_DIR/DEPLOYMENT/Versioner.macOS.zip" \
+    "$REPO_DIR/DEPLOYMENT/${SOLUTION_NAME}.Windows.zip" \
+    "$REPO_DIR/DEPLOYMENT/${SOLUTION_NAME}.Linux.zip" \
+    "$REPO_DIR/DEPLOYMENT/${SOLUTION_NAME}.macOS.zip" \
     "$REPO_DIR/version.txt" \
     "$REPO_DIR/README.md"; then
     die "Failed to create GitHub release"
@@ -365,6 +388,7 @@ main() {
   
   parse_arguments "$@"
   validate_environment
+  detect_solution_name
   detect_version
   convert_version
   validate_artifacts
