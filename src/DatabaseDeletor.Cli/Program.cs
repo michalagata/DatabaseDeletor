@@ -1,10 +1,12 @@
 using System.CommandLine;
 using System.Globalization;
 using DatabaseDeletor.Application;
+using DatabaseDeletor.Application.Configuration;
 using DatabaseDeletor.Cli;
 using DatabaseDeletor.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -43,6 +45,11 @@ try
         DefaultValueFactory = _ => 10000
     };
 
+    var excludeTablesOption = new Option<string[]>("--exclude-tables", "-e")
+    {
+        Description = "Tables to exclude from deletion (schema.table format, comma-separated or multiple flags)"
+    };
+
     var verboseOption = new Option<bool>("--verbose", "-v")
     {
         Description = "Enable verbose logging output"
@@ -53,6 +60,7 @@ try
     rootCommand.Add(sqlOption);
     rootCommand.Add(noConfirmOption);
     rootCommand.Add(batchSizeOption);
+    rootCommand.Add(excludeTablesOption);
     rootCommand.Add(verboseOption);
 
     rootCommand.SetAction(async (ParseResult result, CancellationToken ct) =>
@@ -60,6 +68,7 @@ try
         var connectionString = result.GetRequiredValue(connectionStringOption);
         var sql = result.GetRequiredValue(sqlOption);
         var noConfirm = result.GetValue(noConfirmOption);
+        var excludeTables = result.GetValue(excludeTablesOption) ?? [];
         var verbose = result.GetValue(verboseOption);
 
         if (verbose)
@@ -80,18 +89,22 @@ try
 
         var host = Host.CreateDefaultBuilder()
             .UseSerilog()
-            .ConfigureServices(services =>
+            .ConfigureServices((ctx, services) =>
             {
                 services.AddApplication();
                 services.AddInfrastructure();
+                services.Configure<ExclusionOptions>(ctx.Configuration.GetSection(ExclusionOptions.SectionName));
             })
             .Build();
+
+        var exclusionOptions = host.Services.GetRequiredService<IOptions<ExclusionOptions>>();
+        var globalExcludedTables = exclusionOptions.Value.GetParsedTables();
 
         var deletionService = new DeletionService(host.Services);
 
         try
         {
-            await deletionService.RunAsync(connectionString, sql, noConfirm, ct).ConfigureAwait(false);
+            await deletionService.RunAsync(connectionString, sql, noConfirm, excludeTables, globalExcludedTables, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

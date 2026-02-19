@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DatabaseDeletor.Desktop.ViewModels"
+        xmlns:views="using:DatabaseDeletor.Desktop.Views"
+        x:Class="DatabaseDeletor.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="DatabaseDeletor — Deletion Wizard"
+        Width="900" Height="700"
+        MinWidth="750" MinHeight="550"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.DataTemplates>
+        <DataTemplate DataType="{x:Type vm:ConnectionStepViewModel}">
+            <views:ConnectionStepView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AnalysisStepViewModel}">
+            <views:AnalysisStepView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ConditionsStepViewModel}">
+            <views:ConditionsStepView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SummaryStepViewModel}">
+            <views:SummaryStepView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ExecutionStepViewModel}">
+            <views:ExecutionStepView />
+        </DataTemplate>
+    </Window.DataTemplates>
+
+    <DockPanel>
+        <!-- Step indicator bar -->
+        <Border DockPanel.Dock="Top" Padding="16,8" Background="#1E1E2E">
+            <ItemsControl ItemsSource="{Binding StepTitles}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="16" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" FontSize="13" Foreground="#AAAAAA" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+
+        <!-- Navigation buttons -->
+        <Border DockPanel.Dock="Bottom" Padding="16,12" Background="#1E1E2E">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+                <Button Content="Reset" Command="{Binding ResetCommand}" />
+                <Button Content="Back" Command="{Binding GoBackCommand}" />
+                <Button Content="Next" Command="{Binding GoNextCommand}" Classes="accent" />
+            </StackPanel>
+        </Border>
+
+        <!-- Current step content -->
+        <ContentControl Content="{Binding CurrentStep}" Margin="16" />
+    </DockPanel>
+</Window>

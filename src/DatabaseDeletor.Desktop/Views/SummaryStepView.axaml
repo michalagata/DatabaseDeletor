@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DatabaseDeletor.Desktop.ViewModels"
+             x:Class="DatabaseDeletor.Desktop.Views.SummaryStepView"
+             x:DataType="vm:SummaryStepViewModel">
+
+    <StackPanel Spacing="16">
+        <TextBlock Text="Step 4: Deletion Plan Summary" FontSize="20" FontWeight="Bold" />
+
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsGenerating}" />
+        <TextBlock Text="Generating deletion plan..." IsVisible="{Binding IsGenerating}" Foreground="#AAAAAA" />
+
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <StackPanel IsVisible="{Binding PlanReady}" Spacing="12">
+            <TextBlock FontSize="14">
+                <Run Text="Total estimated rows to delete: " />
+                <Run Text="{Binding TotalEstimatedRows}" FontWeight="Bold" Foreground="Red" />
+            </TextBlock>
+
+            <DataGrid ItemsSource="{Binding Steps}" AutoGenerateColumns="False" IsReadOnly="True"
+                      MaxHeight="300" GridLinesVisibility="Horizontal" BorderThickness="1" BorderBrush="#444">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="#" Binding="{Binding Order}" Width="50" />
+                    <DataGridTextColumn Header="Table" Binding="{Binding Table.FullName}" Width="*" />
+                    <DataGridTextColumn Header="Estimated Rows" Binding="{Binding EstimatedRowCount}" Width="120" />
+                    <DataGridTextColumn Header="SQL" Binding="{Binding DeleteSql}" Width="2*" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <TextBlock Text="Click 'Next' to start the deletion. This action cannot be undone."
+                       Foreground="Orange" FontWeight="SemiBold" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

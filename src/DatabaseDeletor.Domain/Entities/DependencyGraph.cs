@@ -54,4 +54,32 @@ public sealed class DependencyGraph
         Visit(rootTable);
         return result;
     }
+
+    public DependencyGraph FilterExcludedTables(IReadOnlyList<TableInfo> excludedTables)
+    {
+        ArgumentNullException.ThrowIfNull(excludedTables);
+
+        var excludedSet = new HashSet<TableInfo>(excludedTables);
+        var filtered = new DependencyGraph();
+
+        foreach (var table in _tables)
+        {
+            if (!excludedSet.Contains(table))
+                filtered.AddTable(table);
+        }
+
+        foreach (var (table, fks) in _outgoingReferences)
+        {
+            if (excludedSet.Contains(table))
+                continue;
+
+            foreach (var fk in fks)
+            {
+                if (!excludedSet.Contains(fk.ReferencedTable) && !excludedSet.Contains(fk.ReferencingTable))
+                    filtered.AddForeignKey(fk);
+            }
+        }
+
+        return filtered;
+    }
 }

@@ -115,6 +115,31 @@ public sealed class PostgreSqlSchemaIntrospector : ISchemaIntrospector
         }
     }
 
+    public async Task<IReadOnlyList<TableInfo>> GetAllTablesAsync(string connectionString, CancellationToken ct = default)
+    {
+        var connection = new NpgsqlConnection(connectionString);
+        await using (connection.ConfigureAwait(false))
+        {
+            await connection.OpenAsync(ct).ConfigureAwait(false);
+
+            const string sql = """
+                SELECT table_schema AS tableschema, table_name AS tablename
+                FROM information_schema.tables
+                WHERE table_type = 'BASE TABLE'
+                    AND table_schema NOT IN ('pg_catalog', 'information_schema')
+                ORDER BY table_schema, table_name
+                """;
+
+            var results = await connection.QueryAsync<dynamic>(sql).ConfigureAwait(false);
+
+            return results.Select(r => new TableInfo
+            {
+                Schema = r.tableschema,
+                Name = r.tablename
+            }).ToList();
+        }
+    }
+
     public async Task<long> GetRowCountAsync(string connectionString, string schema, string tableName, string? whereClause = null, CancellationToken ct = default)
     {
         var connection = new NpgsqlConnection(connectionString);

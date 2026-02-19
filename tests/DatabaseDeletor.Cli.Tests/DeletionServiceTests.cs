@@ -99,7 +99,7 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("Server=.;Database=TestDb", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, CancellationToken.None);
+        await sut.RunAsync("Server=.;Database=TestDb", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], CancellationToken.None);
 
         // Assert — all three commands were sent
         await mediator.Received(1).SendAsync(Arg.Any<AnalyzeDependenciesCommand>(), Arg.Any<CancellationToken>());
@@ -119,7 +119,7 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, CancellationToken.None);
+        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], CancellationToken.None);
 
         // Assert
         parser.Received(1).Parse("DELETE FROM dbo.Users WHERE Id = 1");
@@ -137,7 +137,7 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("conn", "DELETE FROM dbo.Orders WHERE Id = 1", skipConfirmation: true, CancellationToken.None);
+        await sut.RunAsync("conn", "DELETE FROM dbo.Orders WHERE Id = 1", skipConfirmation: true, [], [], CancellationToken.None);
 
         // Assert
         await mediator.Received(1).SendAsync(
@@ -158,7 +158,7 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, CancellationToken.None);
+        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], CancellationToken.None);
 
         // Assert — ExecuteDeletionCommand was sent with a progress handler
         await mediator.Received(1).SendAsync(
@@ -191,7 +191,7 @@ public sealed class DeletionServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            sut.RunAsync("conn", "DELETE FROM dbo.Users", skipConfirmation: true, CancellationToken.None));
+            sut.RunAsync("conn", "DELETE FROM dbo.Users", skipConfirmation: true, [], [], CancellationToken.None));
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("conn", "DELETE FROM dbo.Users", skipConfirmation: true, CancellationToken.None);
+        await sut.RunAsync("conn", "DELETE FROM dbo.Users", skipConfirmation: true, [], [], CancellationToken.None);
 
         // Assert
         await mediator.Received(1).SendAsync(Arg.Any<ExecuteDeletionCommand>(), Arg.Any<CancellationToken>());
@@ -230,7 +230,7 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, CancellationToken.None);
+        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], CancellationToken.None);
 
         // Assert — the analyze command was sent
         await mediator.Received(1).SendAsync(Arg.Any<AnalyzeDependenciesCommand>(), Arg.Any<CancellationToken>());

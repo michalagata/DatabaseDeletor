@@ -111,6 +111,27 @@ public sealed class OracleSchemaIntrospector : ISchemaIntrospector
         }).ToList();
     }
 
+    public async Task<IReadOnlyList<TableInfo>> GetAllTablesAsync(string connectionString, CancellationToken ct = default)
+    {
+        using var connection = new OracleConnection(connectionString);
+        await connection.OpenAsync(ct).ConfigureAwait(false);
+
+        const string sql = """
+            SELECT OWNER AS TABLESCHEMA, TABLE_NAME AS TABLENAME
+            FROM ALL_TABLES
+            WHERE OWNER = SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA')
+            ORDER BY OWNER, TABLE_NAME
+            """;
+
+        var results = await connection.QueryAsync<dynamic>(sql).ConfigureAwait(false);
+
+        return results.Select(r => new TableInfo
+        {
+            Schema = r.TABLESCHEMA,
+            Name = r.TABLENAME
+        }).ToList();
+    }
+
     public async Task<long> GetRowCountAsync(string connectionString, string schema, string tableName, string? whereClause = null, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(schema);

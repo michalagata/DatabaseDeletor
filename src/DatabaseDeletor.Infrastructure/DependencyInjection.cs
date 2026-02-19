@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddSingleton<IDependencyAnalyzer, DependencyAnalyzer>();
         services.AddSingleton<IDeletionPlanGenerator, DeletionPlanGenerator>();
         services.AddSingleton<IDeletionExecutor, DeletionExecutor>();
+        services.AddSingleton<IExclusionValidator, ExclusionValidator>();
 
         return services;
     }

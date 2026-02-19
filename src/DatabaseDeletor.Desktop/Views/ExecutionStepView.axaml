@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DatabaseDeletor.Desktop.ViewModels"
+             x:Class="DatabaseDeletor.Desktop.Views.ExecutionStepView"
+             x:DataType="vm:ExecutionStepViewModel">
+
+    <StackPanel Spacing="16">
+        <TextBlock Text="Step 5: Execution" FontSize="20" FontWeight="Bold" />
+
+        <StackPanel Spacing="8">
+            <TextBlock Text="{Binding CurrentStepDescription}" FontSize="14" />
+            <ProgressBar Minimum="0" Maximum="100" Value="{Binding OverallPercentage}" Height="24" />
+            <TextBlock FontSize="13" Foreground="#AAAAAA">
+                <Run Text="Deleted: " />
+                <Run Text="{Binding TotalDeletedRows}" />
+                <Run Text=" rows" />
+            </TextBlock>
+        </StackPanel>
+
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" FontWeight="Bold"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <StackPanel IsVisible="{Binding IsCompleted}" Spacing="4">
+            <TextBlock Text="Deletion Complete" FontSize="16" FontWeight="Bold"
+                       IsVisible="{Binding !HasErrors}" Foreground="LimeGreen" />
+            <TextBlock Text="Deletion Complete (with errors)" FontSize="16" FontWeight="Bold"
+                       IsVisible="{Binding HasErrors}" Foreground="Red" />
+        </StackPanel>
+
+        <TextBlock Text="Live Log:" FontWeight="SemiBold" />
+        <Border BorderBrush="#444" BorderThickness="1" CornerRadius="4" MaxHeight="300">
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding LogEntries}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontFamily="Cascadia Code,Consolas,Courier New,monospace" FontSize="12" Margin="4,1" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+    </StackPanel>
+</UserControl>

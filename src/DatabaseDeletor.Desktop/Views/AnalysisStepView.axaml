@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DatabaseDeletor.Desktop.ViewModels"
+             x:Class="DatabaseDeletor.Desktop.Views.AnalysisStepView"
+             x:DataType="vm:AnalysisStepViewModel">
+
+    <StackPanel Spacing="16">
+        <TextBlock Text="Step 2: Dependency Analysis" FontSize="20" FontWeight="Bold" />
+
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsAnalyzing}" />
+        <TextBlock Text="Analyzing dependencies..." IsVisible="{Binding IsAnalyzing}" Foreground="#AAAAAA" />
+
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <StackPanel IsVisible="{Binding AnalysisComplete}" Spacing="12">
+            <TextBlock FontSize="14">
+                <Run Text="Tables in dependency graph: " />
+                <Run Text="{Binding TableCount}" FontWeight="Bold" />
+            </TextBlock>
+
+            <!-- Valid case -->
+            <StackPanel IsVisible="{Binding IsValid}" Spacing="4">
+                <TextBlock Text="No FK conflicts detected. Ready to proceed." Foreground="LimeGreen" FontWeight="SemiBold" />
+            </StackPanel>
+
+            <!-- Conflicts case -->
+            <StackPanel IsVisible="{Binding !IsValid}" Spacing="8">
+                <TextBlock Text="FK Conflicts Detected" Foreground="Red" FontWeight="Bold" FontSize="16" />
+
+                <DataGrid ItemsSource="{Binding Conflicts}" AutoGenerateColumns="False" IsReadOnly="True"
+                          MaxHeight="200" GridLinesVisibility="Horizontal" BorderThickness="1" BorderBrush="#444">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Excluded Table" Binding="{Binding ExcludedTable.FullName}" Width="*" />
+                        <DataGridTextColumn Header="Dependent Table" Binding="{Binding DependentTable.FullName}" Width="*" />
+                        <DataGridTextColumn Header="FK Constraint" Binding="{Binding ForeignKey.ConstraintName}" Width="*" />
+                        <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="2*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <TextBlock Text="Recommendations:" FontWeight="SemiBold" Margin="0,8,0,0" />
+                <ItemsControl ItemsSource="{Binding Recommendations}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" Foreground="Orange" Margin="8,2" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="Go back to Step 1 to adjust table selection." Foreground="#AAAAAA" FontStyle="Italic" />
+            </StackPanel>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

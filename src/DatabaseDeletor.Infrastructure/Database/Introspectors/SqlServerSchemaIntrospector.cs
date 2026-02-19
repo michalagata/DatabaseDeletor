@@ -115,6 +115,30 @@ public sealed class SqlServerSchemaIntrospector : ISchemaIntrospector
         }
     }
 
+    public async Task<IReadOnlyList<TableInfo>> GetAllTablesAsync(string connectionString, CancellationToken ct = default)
+    {
+        var connection = new SqlConnection(connectionString);
+        await using (connection.ConfigureAwait(false))
+        {
+            await connection.OpenAsync(ct).ConfigureAwait(false);
+
+            const string sql = """
+                SELECT TABLE_SCHEMA AS TableSchema, TABLE_NAME AS TableName
+                FROM INFORMATION_SCHEMA.TABLES
+                WHERE TABLE_TYPE = 'BASE TABLE'
+                ORDER BY TABLE_SCHEMA, TABLE_NAME
+                """;
+
+            var results = await connection.QueryAsync<dynamic>(sql).ConfigureAwait(false);
+
+            return results.Select(r => new TableInfo
+            {
+                Schema = r.TableSchema,
+                Name = r.TableName
+            }).ToList();
+        }
+    }
+
     public async Task<long> GetRowCountAsync(string connectionString, string schema, string tableName, string? whereClause = null, CancellationToken ct = default)
     {
         var connection = new SqlConnection(connectionString);

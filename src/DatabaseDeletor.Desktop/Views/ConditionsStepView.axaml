@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DatabaseDeletor.Desktop.ViewModels"
+             x:Class="DatabaseDeletor.Desktop.Views.ConditionsStepView"
+             x:DataType="vm:ConditionsStepViewModel">
+
+    <StackPanel Spacing="16">
+        <TextBlock Text="Step 3: Reference Table and Conditions" FontSize="20" FontWeight="Bold" />
+
+        <TextBlock Text="Select the reference (root) table for deletion:" />
+        <ComboBox ItemsSource="{Binding AvailableTables}"
+                  SelectedItem="{Binding SelectedReferenceTable}"
+                  HorizontalAlignment="Stretch">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding FullName}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <Separator />
+
+        <TextBlock Text="Deletion Scope:" FontWeight="SemiBold" />
+
+        <RadioButton GroupName="DeletionScope" Content="Delete ALL rows"
+                     IsChecked="{Binding DeleteAll}" />
+        <RadioButton GroupName="DeletionScope" Content="Delete with WHERE condition"
+                     IsChecked="{Binding !DeleteAll}" />
+
+        <StackPanel IsVisible="{Binding !DeleteAll}" Spacing="8" Margin="24,0,0,0">
+            <TextBlock Text="WHERE clause:" />
+            <TextBox Text="{Binding WhereClause}" Watermark="e.g. CreatedDate &lt; '2024-01-01'" AcceptsReturn="True" MinHeight="60" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

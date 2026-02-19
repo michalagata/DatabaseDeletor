@@ -1,6 +1,6 @@
 # DatabaseDeletor
 
-A .NET 10 command-line tool and API for mass database deletion with automatic dependency analysis and foreign key resolution. Supports SQL Server, PostgreSQL, MySQL, and Oracle.
+A .NET 10 tool for mass database deletion with automatic dependency analysis and foreign key resolution. Available as a **CLI**, **Desktop GUI (Avalonia)**, and **REST API**. Supports SQL Server, PostgreSQL, MySQL, and Oracle.
 
 ## Features
 
@@ -9,14 +9,72 @@ A .NET 10 command-line tool and API for mass database deletion with automatic de
 - **Bulk delete execution** — Provider-specific optimized bulk deletion with configurable batch sizes
 - **4 database providers** — SQL Server, PostgreSQL, MySQL, Oracle with native ADO.NET drivers
 - **SQL parsing** — Extracts target table and schema from `DELETE FROM` or `SELECT FROM` statements
+- **Table exclusion** — Exclude specific tables from deletion via `--exclude-tables` CLI option or global configuration
 - **Interactive confirmation** — Displays deletion plan with affected tables, row counts, and asks for confirmation before executing
 - **Progress tracking** — Real-time progress bars via Spectre.Console during deletion operations
+- **Desktop GUI** — Avalonia-based wizard with step-by-step flow: connect, select tables, configure, review, execute
 - **Structured logging** — Serilog with file and console sinks, JSON formatting
 - **REST API** — Minimal API endpoint with Swagger/OpenAPI documentation
 - **Feature toggles** — Runtime configuration for Swagger, health checks, deletion/analysis endpoints, and external communication
+- **Global exclusion configuration** — Define always-excluded tables in `appsettings.json`
 - **OpenTelemetry** — Distributed tracing and metrics (conditional on feature toggles)
 - **Self-contained deployment** — Native executables for linux-x64, osx-arm64, win-x64 (no .NET runtime required)
 - **Clean Architecture** — Domain-driven design with CQRS command/handler pattern
+
+## Installation
+
+### Download Pre-built Binaries
+
+Download the latest release from the [GitHub Releases](https://github.com/michalagata/DatabaseDeletor/releases) page.
+
+Each platform ZIP contains **both** the CLI and the Desktop GUI:
+
+| Platform | File | Contents |
+|----------|------|----------|
+| Windows x64 | `DatabaseDeletor.Windows.zip` | `cli/DatabaseDeletor.Cli.exe` + `desktop/DatabaseDeletor.Desktop.exe` |
+| Linux x64 | `DatabaseDeletor.Linux.zip` | `cli/DatabaseDeletor.Cli` + `desktop/DatabaseDeletor.Desktop` |
+| macOS ARM64 | `DatabaseDeletor.macOS.zip` | `cli/DatabaseDeletor.Cli` + `desktop/DatabaseDeletor.Desktop` |
+
+After downloading:
+
+```bash
+# Linux / macOS
+unzip DatabaseDeletor.Linux.zip -d database-deletor
+chmod +x database-deletor/cli/DatabaseDeletor.Cli
+chmod +x database-deletor/desktop/DatabaseDeletor.Desktop
+
+# Run CLI
+./database-deletor/cli/DatabaseDeletor.Cli --help
+
+# Run Desktop
+./database-deletor/desktop/DatabaseDeletor.Desktop
+```
+
+```powershell
+# Windows
+Expand-Archive DatabaseDeletor.Windows.zip -DestinationPath database-deletor
+
+# Run CLI
+.\database-deletor\cli\DatabaseDeletor.Cli.exe --help
+
+# Run Desktop
+.\database-deletor\desktop\DatabaseDeletor.Desktop.exe
+```
+
+### Build from Source
+
+```bash
+# Clone and build
+git clone https://github.com/michalagata/DatabaseDeletor.git
+cd DatabaseDeletor
+dotnet build -c Release
+
+# Run CLI
+dotnet run --project src/DatabaseDeletor.Cli -- --help
+
+# Run Desktop
+dotnet run --project src/DatabaseDeletor.Desktop
+```
 
 ## Product Guide
 
@@ -114,9 +172,11 @@ Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521))(CON
 
 Detection keywords: `Data Source=` + `User Id=` with TNS pattern, or containing `Oracle`/`TNS_ADMIN`.
 
-### CLI Usage
+---
 
-#### Basic syntax
+## CLI Usage
+
+### Basic syntax
 
 ```bash
 database-deletor --connection-string "<conn>" --sql "<query>" [options]
@@ -128,7 +188,7 @@ Or using `dotnet run` during development:
 dotnet run --project src/DatabaseDeletor.Cli -- --connection-string "<conn>" --sql "<query>" [options]
 ```
 
-#### CLI Options
+### CLI Options
 
 | Option | Short | Required | Default | Description |
 |--------|-------|----------|---------|-------------|
@@ -136,9 +196,66 @@ dotnet run --project src/DatabaseDeletor.Cli -- --connection-string "<conn>" --s
 | `--sql` | `-s` | Yes | — | SQL query targeting the table (`DELETE FROM` or `SELECT FROM`) |
 | `--no-confirm` | `-y` | No | `false` | Skip confirmation prompt and execute immediately |
 | `--batch-size` | `-b` | No | `10000` | Number of rows to delete per batch |
+| `--exclude-tables` | `-e` | No | — | Tables to exclude from deletion (comma-separated, repeatable) |
 | `--verbose` | `-v` | No | `false` | Enable debug-level logging output |
 
-#### Real-World Examples
+### Table Exclusion
+
+You can exclude specific tables from the deletion plan using `--exclude-tables` (`-e`). Excluded tables and all their dependents will be skipped.
+
+#### Comma-separated values (single flag)
+
+```bash
+database-deletor \
+  -c "Server=localhost;Database=MyDb;..." \
+  -s "DELETE FROM dbo.Orders WHERE OrderDate < '2020-01-01'" \
+  -e "dbo.AuditLog,dbo.SystemConfig,dbo.UserPreferences"
+```
+
+#### Multiple flags
+
+```bash
+database-deletor \
+  -c "Server=localhost;Database=MyDb;..." \
+  -s "DELETE FROM dbo.Orders WHERE OrderDate < '2020-01-01'" \
+  -e "dbo.AuditLog" \
+  -e "dbo.SystemConfig" \
+  -e "dbo.UserPreferences"
+```
+
+#### Mixed (both styles work together)
+
+```bash
+database-deletor \
+  -c "Server=localhost;Database=MyDb;..." \
+  -s "DELETE FROM dbo.Orders WHERE OrderDate < '2020-01-01'" \
+  -e "dbo.AuditLog,dbo.SystemConfig" \
+  -e "dbo.UserPreferences"
+```
+
+Table names in `--exclude-tables` follow the same format as in SQL: `schema.table` or just `table` (defaults to `dbo` schema).
+
+### Global Exclusion Configuration
+
+You can define tables that are **always excluded** from deletion in `appsettings.json`:
+
+```json
+{
+  "Exclusion": {
+    "GlobalExcludedTables": "dbo.AuditLog,dbo.SystemConfig,dbo.MigrationHistory"
+  }
+}
+```
+
+Global exclusions are:
+- **Always applied** regardless of CLI flags
+- **Reported in console output** with a yellow "via configuration" label
+- **Merged with** any `--exclude-tables` CLI values (deduplicated)
+- **Shown as disabled checkboxes** in the Desktop wizard with "Globally excluded via configuration" label
+
+This is useful for protecting critical tables (audit logs, system configuration, migration history) from accidental deletion across all operations.
+
+### Real-World Examples
 
 **1. Clean up old orders from SQL Server (interactive mode)**
 
@@ -153,7 +270,7 @@ The tool will:
 2. Connect to the database and discover all FK references (e.g., `OrderItems`, `Payments`, `Shipments` referencing `Orders`)
 3. Display a table showing the deletion plan with estimated row counts per table
 4. Ask for confirmation before executing
-5. Delete rows in safe order: `Shipments` → `Payments` → `OrderItems` → `Orders`
+5. Delete rows in safe order: `Shipments` -> `Payments` -> `OrderItems` -> `Orders`
 
 **2. GDPR data purge from PostgreSQL (automated, no prompt)**
 
@@ -167,16 +284,17 @@ database-deletor \
 
 Uses `--no-confirm` for automation (e.g., cron jobs or CI pipelines) and smaller batch size to reduce lock contention.
 
-**3. Purge audit logs from MySQL with verbose output**
+**3. Purge audit logs from MySQL with exclusions**
 
 ```bash
 database-deletor \
   -c "Server=mysql.internal;Port=3306;Database=app_logs;Uid=root;Pwd=secret;SslMode=Preferred" \
   -s "DELETE FROM audit_trail WHERE event_date < '2023-01-01'" \
+  -e "system_settings,user_roles" \
   --verbose
 ```
 
-Verbose mode outputs debug-level logs including SQL statements being executed, timing per batch, and FK discovery details.
+Excludes `system_settings` and `user_roles` from deletion and enables verbose output for debugging.
 
 **4. Clean up Oracle test data**
 
@@ -189,15 +307,16 @@ database-deletor \
 
 Uses short flags (`-y` for no-confirm, `-b` for batch size) and a larger batch size for Oracle bulk operations.
 
-**5. Target a table using SELECT syntax**
+**5. Target a table using SELECT syntax with exclusions**
 
 ```bash
 database-deletor \
   -c "Server=localhost;Database=MyDb;User Id=sa;Password=pass;TrustServerCertificate=True" \
-  -s "SELECT * FROM dbo.TempRecords WHERE CreatedAt < '2024-06-01'"
+  -s "SELECT * FROM dbo.TempRecords WHERE CreatedAt < '2024-06-01'" \
+  -e "dbo.ImportantTable,dbo.AnotherTable"
 ```
 
-Useful when you already have a SELECT query and want to delete all dependent data for that table without rewriting it as DELETE.
+Useful when you already have a SELECT query and want to delete all dependent data for that table, while protecting specific tables from deletion.
 
 ### Batch Size Tuning
 
@@ -206,14 +325,80 @@ The `--batch-size` parameter controls how many rows are deleted per database rou
 | Scenario | Recommended Batch Size | Rationale |
 |----------|----------------------|-----------|
 | General use | `10000` (default) | Balanced throughput vs. lock duration |
-| High-contention OLTP tables | `1000` – `5000` | Shorter lock windows, less blocking |
-| Large cleanup jobs (off-hours) | `50000` – `100000` | Maximize throughput when locks are acceptable |
-| Tables with large rows (BLOBs) | `500` – `2000` | Avoid transaction log overflow |
-| Oracle (ROWNUM-based) | `10000` – `50000` | Oracle handles large batches well |
+| High-contention OLTP tables | `1000` - `5000` | Shorter lock windows, less blocking |
+| Large cleanup jobs (off-hours) | `50000` - `100000` | Maximize throughput when locks are acceptable |
+| Tables with large rows (BLOBs) | `500` - `2000` | Avoid transaction log overflow |
+| Oracle (ROWNUM-based) | `10000` - `50000` | Oracle handles large batches well |
 
 Each batch is a single transaction. If a batch fails, only that batch is rolled back — previously completed batches remain deleted.
 
-### How Deletion Works Internally
+---
+
+## Desktop GUI (Avalonia)
+
+The Desktop app provides a visual wizard for database deletion operations. It is built with Avalonia UI and runs on Windows, Linux, and macOS.
+
+### Starting the Desktop App
+
+```bash
+# From release package
+./desktop/DatabaseDeletor.Desktop       # Linux / macOS
+.\desktop\DatabaseDeletor.Desktop.exe   # Windows
+
+# From source
+dotnet run --project src/DatabaseDeletor.Desktop
+```
+
+### Wizard Steps
+
+The Desktop wizard guides you through 5 steps:
+
+1. **Connection** — Enter connection string, select database provider, connect, and view discovered tables. Tables marked as globally excluded (via `appsettings.json`) appear with disabled checkboxes and an orange "Globally excluded via configuration" label.
+
+2. **Conditions** — Enter your SQL query (`DELETE FROM` or `SELECT FROM`) targeting the table you want to clean up.
+
+3. **Analysis** — The tool introspects the database schema, discovers FK relationships, and builds a dependency graph. It displays the deletion plan with table order, row counts, and FK details.
+
+4. **Summary** — Review the full deletion plan before execution. Shows target table, excluded tables, batch size, and all tables in the deletion chain.
+
+5. **Execution** — Execute the deletion with real-time progress tracking. Displays per-table progress bars and a summary when complete.
+
+### Desktop Configuration
+
+The Desktop app uses its own `appsettings.json` in the application directory:
+
+```json
+{
+  "Exclusion": {
+    "GlobalExcludedTables": "dbo.AuditLog,dbo.SystemConfig"
+  }
+}
+```
+
+Global exclusions configured here will automatically disable those tables in the table selection step.
+
+---
+
+## REST API
+
+The API exposes the same functionality over HTTP with Swagger documentation.
+
+```bash
+# Start the API server
+dotnet run --project src/DatabaseDeletor.Api
+
+# Health check
+curl http://localhost:5000/health
+
+# Swagger UI
+open http://localhost:5000/swagger
+```
+
+The API supports feature toggles via `appsettings.json` — see [Feature Toggles](#feature-toggles).
+
+---
+
+## How Deletion Works Internally
 
 For each table in the deletion plan, DatabaseDeletor uses provider-specific optimized SQL:
 
@@ -236,61 +421,39 @@ If your SQL does not include a WHERE clause (e.g., `DELETE FROM dbo.Orders`), Da
 
 This is by design — sometimes you need to empty an entire table and all its dependents.
 
-### Logging
-
-Logs are written to rolling daily files at `logs/database-deletor-YYYY-MM-DD.log`.
-
-Log levels:
-- **Information** (default): Key steps, deletion plan, batch progress summaries
-- **Debug** (`--verbose`): SQL statements, FK discovery details, timing per batch, full dependency graph
-
-Log format: `2026-02-18 14:30:22.456 +01:00 [INF] Deleting 10000 rows from dbo.OrderItems (batch 3/12)`
-
-### REST API
-
-The API exposes the same functionality over HTTP with Swagger documentation.
-
-```bash
-# Start the API server
-dotnet run --project src/DatabaseDeletor.Api
-
-# Health check
-curl http://localhost:5000/health
-
-# Swagger UI
-open http://localhost:5000/swagger
-```
-
-The API supports feature toggles via `appsettings.json` — see [Feature Toggles](#feature-toggles).
+---
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────┐
-│                    Presentation                       │
-│  ┌─────────────────┐     ┌─────────────────────────┐ │
-│  │  CLI (Spectre +  │     │  API (Minimal API +     │ │
-│  │  System.Command-  │     │  Swagger + Serilog)     │ │
-│  │  Line)           │     │                         │ │
-│  └────────┬─────────┘     └────────┬────────────────┘ │
-├───────────┼────────────────────────┼──────────────────┤
-│           │         Application    │                  │
-│  ┌────────▼────────────────────────▼────────────────┐ │
-│  │  Commands / Handlers / Custom Mediator / SqlParser│ │
-│  └──────────────────────┬───────────────────────────┘ │
-├─────────────────────────┼────────────────────────────┤
-│                         │  Domain                     │
-│  ┌──────────────────────▼───────────────────────────┐ │
-│  │  Entities / Interfaces / Enums / Exceptions       │ │
-│  └──────────────────────┬───────────────────────────┘ │
-├─────────────────────────┼────────────────────────────┤
-│                         │  Infrastructure             │
-│  ┌──────────────────────▼───────────────────────────┐ │
-│  │  DB Providers / Schema Introspectors /            │ │
-│  │  Bulk Delete Executors / Dependency Analyzer      │ │
-│  │  (SQL Server | PostgreSQL | MySQL | Oracle)       │ │
-│  └──────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────┘
++--------------------------------------------------------------+
+|                    Presentation                               |
+|  +---------------+  +-----------+  +------------------------+|
+|  | CLI (Spectre + |  | Desktop   |  | API (Minimal API +    ||
+|  | System.Command-|  | (Avalonia |  | Swagger + Serilog)    ||
+|  | Line)          |  |  MVVM)    |  |                       ||
+|  +-------+--------+  +-----+-----+  +----------+------------+|
++-----------+---------------+-+-------------------+-------------+
+|           |         Application |                |             |
+|  +--------v-----------------v---v----------------v-----------+|
+|  | Commands / Handlers / Custom Mediator / SqlParser /       ||
+|  | TableNameParser / ExclusionOptions                        ||
+|  +---------------------------+-------------------------------+|
++------------------------------+--------------------------------+
+|                              | Domain                         |
+|  +---------------------------v-------------------------------+|
+|  | Entities / Interfaces / Enums / Exceptions                ||
+|  | DependencyGraph / ExclusionConflict / ExclusionAnalysis   ||
+|  +---------------------------+-------------------------------+|
++------------------------------+--------------------------------+
+|                              | Infrastructure                 |
+|  +---------------------------v-------------------------------+|
+|  | DB Providers / Schema Introspectors /                     ||
+|  | Bulk Delete Executors / Dependency Analyzer /             ||
+|  | ExclusionValidator                                        ||
+|  | (SQL Server | PostgreSQL | MySQL | Oracle)                ||
+|  +-----------------------------------------------------------+|
++---------------------------------------------------------------+
 ```
 
 ### Projects
@@ -298,20 +461,21 @@ The API supports feature toggles via `appsettings.json` — see [Feature Toggles
 | Project | Type | Description |
 |---------|------|-------------|
 | `DatabaseDeletor.Domain` | Class Library | Entities, interfaces, enums, exceptions, domain events |
-| `DatabaseDeletor.Application` | Class Library | CQRS commands/handlers, custom Mediator, SQL parser |
-| `DatabaseDeletor.Infrastructure` | Class Library | 4 DB providers, schema introspection, bulk deletion, Dapper |
+| `DatabaseDeletor.Application` | Class Library | CQRS commands/handlers, custom Mediator, SQL parser, table name parser, exclusion options |
+| `DatabaseDeletor.Infrastructure` | Class Library | 4 DB providers, schema introspection, bulk deletion, exclusion validation, Dapper |
 | `DatabaseDeletor.Cli` | Console App | CLI entry point with System.CommandLine + Spectre.Console |
+| `DatabaseDeletor.Desktop` | Desktop App | Avalonia UI wizard with MVVM (CommunityToolkit.Mvvm) |
 | `DatabaseDeletor.Api` | Web App | Minimal API with Swagger, health check endpoint |
 | `DatabaseDeletor.Domain.Tests` | xUnit Tests | 70 unit tests for domain entities and value objects |
-| `DatabaseDeletor.Application.Tests` | xUnit Tests | 36 unit tests for handlers, mediator, DI, SQL parser |
+| `DatabaseDeletor.Application.Tests` | xUnit Tests | 52 unit tests for handlers, mediator, DI, SQL parser, table name parser |
 | `DatabaseDeletor.Infrastructure.Tests` | xUnit Tests | 64 unit tests for providers, introspectors, executors, DI |
 | `DatabaseDeletor.Cli.Tests` | xUnit Tests | 13 tests for DeletionService and ConsoleRenderer |
 | `DatabaseDeletor.Api.Tests` | xUnit Tests | 20 tests for startup, health, Swagger, feature toggles, config validation |
 
 ## Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (10.0.100 or later)
-- One or more of the supported databases for testing:
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (10.0.100 or later) — only needed for building from source
+- One or more of the supported databases:
   - SQL Server 2019+
   - PostgreSQL 14+
   - MySQL 8.0+
@@ -333,7 +497,7 @@ dotnet build -c Release
 ### Run Tests
 
 ```bash
-# Run all 203 tests
+# Run all 219 tests
 dotnet test
 
 # Run tests with coverage
@@ -354,18 +518,26 @@ dotnet run --project src/DatabaseDeletor.Cli -- \
   --connection-string "Server=localhost;Database=MyDb;User Id=sa;Password=YourPass;TrustServerCertificate=True" \
   --sql "DELETE FROM dbo.Orders WHERE OrderDate < '2020-01-01'"
 
-# Delete with auto-confirm and custom batch size
+# Delete with auto-confirm, custom batch size, and exclusions
 dotnet run --project src/DatabaseDeletor.Cli -- \
   -c "Host=localhost;Database=mydb;Username=postgres;Password=secret" \
   -s "DELETE FROM public.logs WHERE created_at < '2024-01-01'" \
   --no-confirm \
-  --batch-size 50000
+  --batch-size 50000 \
+  -e "public.audit_trail,public.system_config"
 
 # Enable verbose logging
 dotnet run --project src/DatabaseDeletor.Cli -- \
   -c "Server=localhost;Database=testdb;User Id=sa;Password=pass;TrustServerCertificate=True" \
   -s "DELETE FROM schema1.audit_trail" \
   --verbose
+```
+
+### Run the Desktop App
+
+```bash
+# Start the Desktop wizard
+dotnet run --project src/DatabaseDeletor.Desktop
 ```
 
 ### Run the API
@@ -387,11 +559,12 @@ curl http://localhost:5000/health
 2. **Detect provider** — Auto-detects the database provider (SQL Server, PostgreSQL, MySQL, Oracle) from the connection string
 3. **Analyze dependencies** — Introspects the database schema to discover all foreign key relationships referencing the target table
 4. **Build dependency graph** — Constructs a directed acyclic graph of table dependencies using topological sort
-5. **Generate deletion plan** — Creates an ordered list of tables to delete from, respecting FK constraints (children first, then parents)
-6. **Display plan** — Shows a formatted table with the deletion order, table names, estimated row counts, and FK relationships
-7. **Confirm** — Asks for user confirmation (unless `--no-confirm` is specified)
-8. **Execute** — Performs batched bulk deletes in the correct order with real-time progress tracking
-9. **Report** — Displays a summary of deleted rows, timing, and any errors
+5. **Apply exclusions** — Filters out globally excluded tables (from config) and CLI-excluded tables, validates no conflicts exist
+6. **Generate deletion plan** — Creates an ordered list of tables to delete from, respecting FK constraints (children first, then parents)
+7. **Display plan** — Shows a formatted table with the deletion order, table names, estimated row counts, and FK relationships
+8. **Confirm** — Asks for user confirmation (unless `--no-confirm` is specified)
+9. **Execute** — Performs batched bulk deletes in the correct order with real-time progress tracking
+10. **Report** — Displays a summary of deleted rows, timing, and any errors
 
 ## Database Provider Detection
 
@@ -407,17 +580,26 @@ The provider is automatically detected from the connection string:
 
 ## Self-Contained Deployment
 
-The CLI and API are published as self-contained native executables — no .NET runtime is required on the target machine.
+The CLI and Desktop are published as self-contained native executables — no .NET runtime is required on the target machine.
 
 ```bash
-# Publish for Linux
-dotnet publish src/DatabaseDeletor.Cli/DatabaseDeletor.Cli.csproj -c Release -r linux-x64
+# Publish CLI for Linux
+dotnet publish src/DatabaseDeletor.Cli/DatabaseDeletor.Cli.csproj -c Release -r linux-x64 --self-contained
 
-# Publish for macOS (Apple Silicon)
-dotnet publish src/DatabaseDeletor.Cli/DatabaseDeletor.Cli.csproj -c Release -r osx-arm64
+# Publish Desktop for Linux
+dotnet publish src/DatabaseDeletor.Desktop/DatabaseDeletor.Desktop.csproj -c Release -r linux-x64 --self-contained
 
-# Publish for Windows
-dotnet publish src/DatabaseDeletor.Cli/DatabaseDeletor.Cli.csproj -c Release -r win-x64
+# Publish CLI for macOS (Apple Silicon)
+dotnet publish src/DatabaseDeletor.Cli/DatabaseDeletor.Cli.csproj -c Release -r osx-arm64 --self-contained
+
+# Publish Desktop for macOS (Apple Silicon)
+dotnet publish src/DatabaseDeletor.Desktop/DatabaseDeletor.Desktop.csproj -c Release -r osx-arm64 --self-contained
+
+# Publish CLI for Windows
+dotnet publish src/DatabaseDeletor.Cli/DatabaseDeletor.Cli.csproj -c Release -r win-x64 --self-contained
+
+# Publish Desktop for Windows
+dotnet publish src/DatabaseDeletor.Desktop/DatabaseDeletor.Desktop.csproj -c Release -r win-x64 --self-contained
 ```
 
 The Docker image uses `runtime-deps` as the base (not `aspnet`), since the executables are self-contained.
@@ -443,6 +625,35 @@ The API supports runtime feature toggles via `appsettings.json`:
 }
 ```
 
+## Configuration Reference
+
+### appsettings.json (CLI, Desktop, API)
+
+```json
+{
+  "Exclusion": {
+    "GlobalExcludedTables": "dbo.AuditLog,dbo.SystemConfig,dbo.MigrationHistory"
+  },
+  "Serilog": {
+    "MinimumLevel": "Information"
+  }
+}
+```
+
+| Section | Key | Type | Default | Description |
+|---------|-----|------|---------|-------------|
+| `Exclusion` | `GlobalExcludedTables` | `string` | `""` | Comma-separated list of tables to always exclude from deletion |
+
+### Logging
+
+Logs are written to rolling daily files at `logs/database-deletor-YYYY-MM-DD.log`.
+
+Log levels:
+- **Information** (default): Key steps, deletion plan, batch progress summaries
+- **Debug** (`--verbose`): SQL statements, FK discovery details, timing per batch, full dependency graph
+
+Log format: `2026-02-18 14:30:22.456 +01:00 [INF] Deleting 10000 rows from dbo.OrderItems (batch 3/12)`
+
 ## Docker
 
 ### Build the image
@@ -452,10 +663,10 @@ The API supports runtime feature toggles via `appsettings.json`:
 ./scripts/build.sh
 
 # With custom tag
-./scripts/build.sh -t v1.0.0
+./scripts/build.sh -t v1.1.0
 
 # Build and push to registry
-./scripts/build.sh -r registry.example.com -t v1.0.0 --push
+./scripts/build.sh -r registry.example.com -t v1.1.0 --push
 ```
 
 ### Run the container
@@ -478,20 +689,11 @@ The `scripts/` directory contains universal build and deployment scripts:
 | `push.sh` | Git add, commit, and push workflow |
 | `clean.sh` | Clean build artifacts (bin, obj, DEPLOYMENT) |
 | `_buildDotnetSolution.sh` | Universal .NET build, test, and publish script |
+| `_performBuildLinux.sh` | Publish for Linux x64 + create ZIP |
+| `_performBuildMacOS.sh` | Publish for macOS ARM64 + create ZIP |
+| `_performBuildWindows.sh` | Publish for Windows x64 + create ZIP |
+| `_GithubPublish.sh` | Create GitHub release with all artifacts |
 | `_common.sh` | Shared utility functions for all scripts |
-
-### Build the solution with the universal script
-
-```bash
-# Full build (restore + build + test + publish)
-./scripts/_buildDotnetSolution.sh
-
-# Build without tests
-./scripts/_buildDotnetSolution.sh --no-test
-
-# Build for Linux deployment
-./scripts/_buildDotnetSolution.sh -r linux-x64 --self-contained
-```
 
 ## Technology Stack
 
@@ -505,9 +707,11 @@ The `scripts/` directory contains universal build and deployment scripts:
 | Oracle Driver | Oracle.ManagedDataAccess.Core | 23.7.0 |
 | CLI Framework | System.CommandLine | 2.0.0-beta5 |
 | Console UI | Spectre.Console | 0.49.1 |
+| Desktop UI | Avalonia | 11.2.3 |
+| MVVM Toolkit | CommunityToolkit.Mvvm | 8.2.2 |
 | Logging | Serilog | 4.2.0 |
 | API Documentation | Swashbuckle.AspNetCore | 7.3.1 |
-| Observability | OpenTelemetry | 1.12.0 |
+| Observability | OpenTelemetry | 1.11.2 |
 | Unit Testing | xUnit | 2.9.3 |
 | Mocking | NSubstitute | 5.3.0 |
 | Assertions | FluentAssertions | 8.1.1 |
@@ -520,10 +724,11 @@ The `scripts/` directory contains universal build and deployment scripts:
 DatabaseDeletor/
 ├── src/
 │   ├── DatabaseDeletor.Domain/         # Entities, interfaces, enums
-│   ├── DatabaseDeletor.Application/    # Commands, handlers, mediator
+│   ├── DatabaseDeletor.Application/    # Commands, handlers, mediator, helpers
 │   ├── DatabaseDeletor.Infrastructure/ # DB providers, Dapper queries
-│   ├── DatabaseDeletor.Cli/           # CLI entry point
-│   └── DatabaseDeletor.Api/           # REST API
+│   ├── DatabaseDeletor.Cli/            # CLI entry point
+│   ├── DatabaseDeletor.Desktop/        # Avalonia Desktop wizard
+│   └── DatabaseDeletor.Api/            # REST API
 ├── tests/
 │   ├── DatabaseDeletor.Domain.Tests/
 │   ├── DatabaseDeletor.Application.Tests/

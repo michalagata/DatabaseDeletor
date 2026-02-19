@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DatabaseDeletor.Desktop.ViewModels"
+             x:Class="DatabaseDeletor.Desktop.Views.ConnectionStepView"
+             x:DataType="vm:ConnectionStepViewModel">
+
+    <StackPanel Spacing="16">
+        <TextBlock Text="Step 1: Connect and Select Tables" FontSize="20" FontWeight="Bold" />
+
+        <TextBlock Text="Connection String:" />
+        <TextBox Text="{Binding ConnectionString}" Watermark="Server=.;Database=MyDb;Trusted_Connection=True" />
+        <Button Content="Connect" Command="{Binding ConnectCommand}" HorizontalAlignment="Left" Classes="accent" />
+
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsConnecting}" />
+
+        <StackPanel IsVisible="{Binding IsConnected}" Spacing="8">
+            <TextBlock Text="Select tables to include in deletion:" FontWeight="SemiBold" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Select All" Command="{Binding SelectAllCommand}" />
+                <Button Content="Deselect All" Command="{Binding DeselectAllCommand}" />
+            </StackPanel>
+
+            <Border BorderBrush="#444" BorderThickness="1" CornerRadius="4" MaxHeight="350">
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Tables}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:TableSelectionItem}">
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="4,2">
+                                    <CheckBox IsChecked="{Binding IsSelected}"
+                                              Content="{Binding FullName}"
+                                              IsEnabled="{Binding !IsGloballyExcluded}" />
+                                    <TextBlock Text="Globally excluded via configuration"
+                                               Foreground="Orange"
+                                               FontStyle="Italic"
+                                               FontSize="11"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding IsGloballyExcluded}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

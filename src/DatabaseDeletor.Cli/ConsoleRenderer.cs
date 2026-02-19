@@ -71,6 +71,65 @@ internal static class ConsoleRenderer
         AnsiConsole.WriteLine();
     }
 
+    public static void WriteGlobalExcludedTables(IReadOnlyList<TableInfo> tables)
+    {
+        AnsiConsole.MarkupLine("[yellow]![/] [bold yellow]Globally excluded tables (via configuration):[/]");
+        foreach (var table in tables)
+        {
+            AnsiConsole.MarkupLine($"    [yellow]-[/] {Markup.Escape(table.FullName)}");
+        }
+        AnsiConsole.WriteLine();
+    }
+
+    public static void WriteExcludedTables(IReadOnlyList<TableInfo> tables)
+    {
+        AnsiConsole.MarkupLine("  [yellow]![/] CLI-excluded tables:");
+        foreach (var table in tables)
+        {
+            AnsiConsole.MarkupLine($"    [grey]-[/] {Markup.Escape(table.FullName)}");
+        }
+    }
+
+    public static void WriteExclusionConflictReport(ExclusionAnalysisResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(new Rule("[bold red]Exclusion Conflicts Detected[/]").RuleStyle("red"));
+
+        var table = new Table()
+            .Border(TableBorder.Rounded)
+            .AddColumn(new TableColumn("[bold]Excluded Table[/]"))
+            .AddColumn(new TableColumn("[bold]Dependent Table[/]"))
+            .AddColumn(new TableColumn("[bold]FK Constraint[/]"))
+            .AddColumn(new TableColumn("[bold]Reason[/]"));
+
+        foreach (var conflict in result.Conflicts)
+        {
+            table.AddRow(
+                Markup.Escape(conflict.ExcludedTable.FullName),
+                Markup.Escape(conflict.DependentTable.FullName),
+                Markup.Escape(conflict.ForeignKey.ConstraintName),
+                Markup.Escape(conflict.Reason));
+        }
+
+        AnsiConsole.Write(table);
+
+        if (result.Recommendations.Count > 0)
+        {
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[bold yellow]Recommendations:[/]");
+            foreach (var rec in result.Recommendations)
+            {
+                AnsiConsole.MarkupLine($"  [yellow]>[/] {Markup.Escape(rec)}");
+            }
+        }
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[bold red]Cannot proceed with deletion due to FK conflicts. Resolve the conflicts above and retry.[/]");
+        AnsiConsole.WriteLine();
+    }
+
     public static bool ConfirmDeletion()
     {
         return AnsiConsole.Confirm(

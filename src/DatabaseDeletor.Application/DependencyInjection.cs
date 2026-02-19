@@ -18,6 +18,8 @@ public static class DependencyInjection
         services.AddTransient<IRequestHandler<AnalyzeDependenciesCommand, DependencyGraph>, AnalyzeDependenciesHandler>();
         services.AddTransient<IRequestHandler<GenerateDeletionPlanCommand, DeletionPlan>, GenerateDeletionPlanHandler>();
         services.AddTransient<IRequestHandler<ExecuteDeletionCommand, DeletionReport>, ExecuteDeletionHandler>();
+        services.AddTransient<IRequestHandler<GetAllTablesCommand, IReadOnlyList<TableInfo>>, GetAllTablesHandler>();
+        services.AddTransient<IRequestHandler<ValidateExclusionsCommand, ExclusionAnalysisResult>, ValidateExclusionsHandler>();
 
         return services;
     }
