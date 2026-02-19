@@ -1,32 +1,25 @@
 # Current State
 
 ## Active Task
-Build artifacts for all 3 platforms and publish GitHub release
+Build, publish, and create GitHub release R-1.1.0 with CLI + Desktop for all platforms
 
 ## Status
 completed
 
 ## Completion
-100% — All 3 platform builds done, GitHub release R-1.0.0 created and verified
+100% — Release R-1.1.0 published to GitHub with 5 assets
 
 ## Last Action
-Created GitHub release R-1.0.0 at michalagata/DatabaseDeletor with 5 assets:
-- DatabaseDeletor.Linux.zip (42 MB)
-- DatabaseDeletor.macOS.zip (39 MB)
-- DatabaseDeletor.Windows.zip (42 MB)
-- README.md
-- version.txt
+Created GitHub release R-1.1.0 at https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.1.0
+- 5 assets: DatabaseDeletor.Linux.zip (91MB), DatabaseDeletor.macOS.zip (89MB), DatabaseDeletor.Windows.zip (89MB), README.md, version.txt
+- Each ZIP contains both cli/ and desktop/ directories with self-contained executables
 
 ## Next Step
-None — task fully completed.
+None — release fully completed.
 
 ## Files Modified This Session
-- `scripts/_GithubPublish.sh` — Dynamic solution name detection
-- `scripts/_buildAndPublishAndReleaseAll.sh` — Dynamic naming, graceful Versioner fallback
-- `scripts/_common.sh` — Added detect_platform(), find_csproj_files()
-- `scripts/_publishLocal.sh` — Fully dynamic artifact/install paths
-- `version.txt` — Created with 1.0.0
-- `.gitignore` — Added .nuget-api-key exclusion
+- `version.txt` — updated from 1.0.0 to 1.1.0
+- `README.md` — comprehensive rewrite with Desktop GUI docs, --exclude-tables, global exclusion config, installation instructions
 
 ## Open Decisions
 - None
@@ -36,13 +29,14 @@ None — task fully completed.
 
 ## Git State
 - Branch: master
-- Last commit: 079001d Add .nuget-api-key to .gitignore
-- Remote: origin = https://github.com/michalagata/DatabaseDeletor.git (pushed to main)
-- Uncommitted changes: no
+- Last commit: 8ee07fc Add table exclusion, global config, Desktop GUI, and v1.1.0 release
+- Pushed to: origin/main
+- Release: R-1.1.0 (PUBLISHED, not draft)
 
 ## Loaded Rules
-- general.md, dotnet.md, bash.md
+- general.md, dotnet.md
 
 ## User Preferences (This Session)
-- Publish to GitHub releases only
-- Target repository: michalagata/DatabaseDeletor
+- Build using dedicated scripts
+- Ensure artifacts include BOTH CLI and Desktop for each platform
+- Updated README.md with full product usage instructions

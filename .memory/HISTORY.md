@@ -161,3 +161,97 @@
 - Result: Release created and verified — PUBLISHED (not draft), 5 assets uploaded
 - URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.0.0
 - Assets: DatabaseDeletor.Linux.zip (43MB), DatabaseDeletor.macOS.zip (40MB), DatabaseDeletor.Windows.zip (44MB), README.md, version.txt
+
+## [2026-02-19 00:00] Session 7: Table Exclusion + Avalonia Desktop Wizard
+- Task: Implement 6-phase plan for --exclude-tables CLI option and Avalonia UI Desktop wizard
+
+## [2026-02-19 00:01] Phase 1: Domain Layer
+- Action: Created ExclusionConflict, ExclusionAnalysisResult entities; IExclusionValidator interface; added GetAllTablesAsync to ISchemaIntrospector; added FilterExcludedTables to DependencyGraph
+- Files: 3 new + 2 modified in Domain
+- Result: Build 0W 0E
+
+## [2026-02-19 00:10] Phase 2: Infrastructure Layer
+- Action: Added GetAllTablesAsync to all 4 introspectors (SQL Server, PostgreSQL, MySQL, Oracle); created ExclusionValidator service; registered in DI
+- Files: 1 new + 5 modified in Infrastructure
+- Result: Build 0W 0E
+
+## [2026-02-19 00:20] Phase 3: Application Layer
+- Action: Created GetAllTablesCommand/Handler, ValidateExclusionsCommand/Handler; registered in DI
+- Files: 4 new + 1 modified in Application
+- Result: Build 0W 0E
+
+## [2026-02-19 00:30] Phase 4: CLI Changes
+- Action: Added --exclude-tables option to Program.cs; extended DeletionService with exclusion validation step; added conflict report rendering to ConsoleRenderer
+- Files: 3 modified in CLI + 1 modified in CLI tests (DeletionServiceTests updated for new signature)
+- Result: Build 0W 0E, 203 tests passing
+
+## [2026-02-19 00:40] Phase 5: Avalonia Desktop Project
+- Action: Created entire Desktop project (~15 files): Program.cs, App, ViewModels (7), Views (6 axaml+cs pairs), MainWindow. Added to solution and Directory.Packages.props
+- Files: ~15 new files + DatabaseDeletor.sln + Directory.Packages.props
+- Result: Build initially had code analysis errors
+
+## [2026-02-19 01:00] Phase 5 Fix: Code Analysis Errors
+- Action: Fixed CA1515 (suppressed in csproj — Avalonia needs public types), CA1819 (array→IReadOnlyList), CA1062 (null check in LoadTables), CA1031 ×4 (pragma suppress in UI catch-all handlers), AVLN2000 (added Avalonia.Controls.DataGrid package), AVLN3000 (replaced BoolConverters.Or misuse with dual TextBlocks)
+- Files: DatabaseDeletor.Desktop.csproj, MainWindowViewModel.cs, ConditionsStepViewModel.cs, ConnectionStepViewModel.cs, AnalysisStepViewModel.cs, SummaryStepViewModel.cs, ExecutionStepViewModel.cs, ExecutionStepView.axaml, Directory.Packages.props
+- Result: Build 0W 0E, 203 tests passing
+- Decision: CA1031 suppressed with #pragma in 4 UI handlers — intentional catch-all for error display
+
+## [2026-02-19 12:30] Session 8: Global Exclusion Config + Comma-Separated CLI
+- Task: Implement global ExcludedTables config, comma-separated CLI, Desktop integration
+
+## [2026-02-19 12:31] Step 1: Create shared Application layer classes
+- Action: Created TableNameParser.cs (static Parse with comma-separated support) and ExclusionOptions.cs (Options class bound to "Exclusion" section)
+- Files: src/DatabaseDeletor.Application/Helpers/TableNameParser.cs (new), src/DatabaseDeletor.Application/Configuration/ExclusionOptions.cs (new)
+- Result: Build 0W 0E
+
+## [2026-02-19 12:35] Step 2: Update CLI project
+- Action: Refactored DeletionService to use TableNameParser + merge global/CLI exclusions, added WriteGlobalExcludedTables to ConsoleRenderer, updated Program.cs with config binding, added Exclusion section to appsettings.json
+- Files: DeletionService.cs, ConsoleRenderer.cs, Program.cs, appsettings.json (all modified)
+- Result: Build 0W 0E
+
+## [2026-02-19 12:40] Step 3: Update Desktop project
+- Action: Added IsGloballyExcluded to TableSelectionItem, injected IOptions<ExclusionOptions> in ConnectionStepViewModel, updated AXAML with disabled checkboxes + info label, configured App.axaml.cs with IConfiguration, created appsettings.json, updated csproj
+- Files: TableSelectionItem.cs, ConnectionStepViewModel.cs, ConnectionStepView.axaml, App.axaml.cs, appsettings.json (new), DatabaseDeletor.Desktop.csproj (all modified)
+- Result: Build 0W 0E
+
+## [2026-02-19 12:45] Step 4: Update tests and API
+- Action: Updated all 7 DeletionServiceTests RunAsync calls for new signature, created TableNameParserTests (10 tests), created ExclusionOptionsTests (6 tests), added Exclusion section to API appsettings.json
+- Files: DeletionServiceTests.cs, TableNameParserTests.cs (new), ExclusionOptionsTests.cs (new), Api/appsettings.json
+- Result: 219 tests all passing (70 Domain + 52 Application + 64 Infrastructure + 13 CLI + 20 API)
+
+## [2026-02-19 12:50] Step 5: Build fixes
+- Action: Fixed CA1002 (List→IReadOnlyList), CA1062 (null checks), NuGet permission workaround (CommunityToolkit.Mvvm 8.4.0→8.2.2), added Options.ConfigurationExtensions package
+- Files: TableNameParser.cs, ExclusionOptions.cs, ConnectionStepViewModel.cs, Directory.Packages.props
+- Result: Full solution build 0W 0E, 219 tests passing
+- Decision: CommunityToolkit.Mvvm downgraded to 8.2.2 due to NuGet cache ownership issue (root-owned directory)
+
+## [2026-02-19 14:00] Session 9: Build + GitHub Release R-1.1.0
+- Task: Build both CLI and Desktop for all platforms, create GitHub release with full README
+
+## [2026-02-19 14:00] Step 1: Update version and README
+- Action: Updated version.txt from 1.0.0 to 1.1.0. Rewrote README.md with full product guide including Desktop GUI wizard docs, --exclude-tables with comma-separated support, global exclusion configuration, installation instructions from releases, architecture diagram with Desktop project
+- Files: version.txt, README.md
+- Result: README now covers CLI + Desktop + API with all new features
+
+## [2026-02-19 14:02] Step 2: Build and test
+- Action: Built solution in Release mode (0W 0E), ran all 219 tests (all passing)
+- Files: None (build only)
+- Result: Build 0W 0E, 219 tests passing
+
+## [2026-02-19 14:03] Step 3: Cross-platform publish (CLI + Desktop)
+- Action: Published 6 combinations: CLI + Desktop for linux-x64, osx-arm64, win-x64. All self-contained.
+- Files: DEPLOYMENT/staging/{linux,macos,windows}/{cli,desktop}/
+- Result: All 6 publishes succeeded
+
+## [2026-02-19 14:04] Step 4: Create ZIP artifacts
+- Action: Created 3 platform ZIPs with cli/ and desktop/ subdirectories, plus README.md and version.txt
+- Files: DEPLOYMENT/DatabaseDeletor.{Linux,macOS,Windows}.zip
+- Result: Linux 91MB, macOS 89MB, Windows 89MB — each containing both CLI and Desktop
+- Note: Had to delete old R-1.0.0 ZIPs first because `zip -r` appends to existing archives
+
+## [2026-02-19 14:05] Step 5: Push and create GitHub release
+- Action: Committed all changes (55 files, 2124 insertions), pushed master→main, ran _GithubPublish.sh
+- Files: Git commit 8ee07fc
+- Result: Release R-1.1.0 created and verified — PUBLISHED (not draft), 5 assets
+- URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.1.0
+- Assets: DatabaseDeletor.Linux.zip (91MB), DatabaseDeletor.macOS.zip (89MB), DatabaseDeletor.Windows.zip (89MB), README.md, version.txt
