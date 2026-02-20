@@ -255,3 +255,21 @@
 - Result: Release R-1.1.0 created and verified — PUBLISHED (not draft), 5 assets
 - URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.1.0
 - Assets: DatabaseDeletor.Linux.zip (91MB), DatabaseDeletor.macOS.zip (89MB), DatabaseDeletor.Windows.zip (89MB), README.md, version.txt
+
+## [2026-02-20 11:35] Session 10: Add Database Icon to Desktop Executable
+- Task: Add application icon to Windows Desktop .exe
+
+## [2026-02-20 11:35] Step 1: Create database icon assets
+- Action: Generated multi-size database cylinder icon using Python/Pillow — blue cylinder with 2 partition lines, highlight on top cap
+- Files: src/DatabaseDeletor.Desktop/Assets/app-icon.ico (new, 5.9KB, 9 sizes: 16-256px), src/DatabaseDeletor.Desktop/Assets/app-icon.png (new, 2.3KB, 256x256)
+- Result: Icon files created and visually verified
+
+## [2026-02-20 11:36] Step 2: Configure project to use icon
+- Action: Added ApplicationIcon property to csproj (embeds .ico in Windows PE exe), added AvaloniaResource for PNG, set Window Icon attribute in MainWindow.axaml
+- Files: DatabaseDeletor.Desktop.csproj (edited), Views/MainWindow.axaml (edited)
+- Result: Build 0W 0E, 219 tests passing
+
+## [2026-02-20 11:37] Step 3: Rebuild Windows deployment
+- Action: Published Desktop + CLI for win-x64, rebuilt DatabaseDeletor.Windows.zip
+- Files: DEPLOYMENT/staging/windows/desktop/ (rebuilt), DEPLOYMENT/DatabaseDeletor.Windows.zip (93MB)
+- Result: .exe size grew 159KB→169KB confirming icon embedded in PE header

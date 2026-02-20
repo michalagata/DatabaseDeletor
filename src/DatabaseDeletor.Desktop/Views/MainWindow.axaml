@@ -5,6 +5,7 @@
         x:Class="DatabaseDeletor.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="DatabaseDeletor — Deletion Wizard"
+        Icon="avares://DatabaseDeletor.Desktop/Assets/app-icon.png"
         Width="900" Height="700"
         MinWidth="750" MinHeight="550"
         WindowStartupLocation="CenterScreen">

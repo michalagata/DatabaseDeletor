@@ -1,25 +1,26 @@
 # Current State
 
 ## Active Task
-Build, publish, and create GitHub release R-1.1.0 with CLI + Desktop for all platforms
+Add database icon to Desktop Windows executable
 
 ## Status
 completed
 
 ## Completion
-100% — Release R-1.1.0 published to GitHub with 5 assets
+100%
 
 ## Last Action
-Created GitHub release R-1.1.0 at https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.1.0
-- 5 assets: DatabaseDeletor.Linux.zip (91MB), DatabaseDeletor.macOS.zip (89MB), DatabaseDeletor.Windows.zip (89MB), README.md, version.txt
-- Each ZIP contains both cli/ and desktop/ directories with self-contained executables
+Created database icon (ICO + PNG), configured .csproj with ApplicationIcon and AvaloniaResource, set Window Icon in MainWindow.axaml, rebuilt and published Windows Desktop exe with embedded icon
 
 ## Next Step
-None — release fully completed.
+None — icon embedded in exe, Windows ZIP rebuilt
 
 ## Files Modified This Session
-- `version.txt` — updated from 1.0.0 to 1.1.0
-- `README.md` — comprehensive rewrite with Desktop GUI docs, --exclude-tables, global exclusion config, installation instructions
+- `src/DatabaseDeletor.Desktop/Assets/app-icon.ico` — new, multi-size database icon (16-256px, 9 sizes)
+- `src/DatabaseDeletor.Desktop/Assets/app-icon.png` — new, 256x256 PNG for Avalonia window icon
+- `src/DatabaseDeletor.Desktop/DatabaseDeletor.Desktop.csproj` — added ApplicationIcon and AvaloniaResource
+- `src/DatabaseDeletor.Desktop/Views/MainWindow.axaml` — added Icon attribute with avares:// URI
+- `DEPLOYMENT/DatabaseDeletor.Windows.zip` — rebuilt with icon-embedded exe (93MB)
 
 ## Open Decisions
 - None
@@ -30,13 +31,10 @@ None — release fully completed.
 ## Git State
 - Branch: master
 - Last commit: 8ee07fc Add table exclusion, global config, Desktop GUI, and v1.1.0 release
-- Pushed to: origin/main
-- Release: R-1.1.0 (PUBLISHED, not draft)
+- Uncommitted changes: yes (icon files + csproj + axaml edits)
 
 ## Loaded Rules
 - general.md, dotnet.md
 
 ## User Preferences (This Session)
-- Build using dedicated scripts
-- Ensure artifacts include BOTH CLI and Desktop for each platform
-- Updated README.md with full product usage instructions
+- Desktop exe needs custom database icon

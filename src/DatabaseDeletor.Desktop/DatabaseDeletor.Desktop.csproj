@@ -4,6 +4,7 @@
     <RootNamespace>DatabaseDeletor.Desktop</RootNamespace>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>false</PublishSingleFile>
+    <ApplicationIcon>Assets\app-icon.ico</ApplicationIcon>
     <!-- Avalonia XAML requires public types for DataTemplates and x:Class bindings -->
     <NoWarn>$(NoWarn);CA1515</NoWarn>
   </PropertyGroup>
@@ -39,5 +40,9 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\app-icon.png" />
   </ItemGroup>
 </Project>
