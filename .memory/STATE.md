@@ -1,26 +1,29 @@
 # Current State
 
 ## Active Task
-Add database icon to Desktop Windows executable
+Publish R-1.2.0 release to GitHub with database icon
 
 ## Status
 completed
 
 ## Completion
-100%
+100% — Release R-1.2.0 published to GitHub with 5 assets
 
 ## Last Action
-Created database icon (ICO + PNG), configured .csproj with ApplicationIcon and AvaloniaResource, set Window Icon in MainWindow.axaml, rebuilt and published Windows Desktop exe with embedded icon
+Published GitHub release R-1.2.0 via _GithubPublish.sh script
+- 5 assets: DatabaseDeletor.Linux.zip (91MB), DatabaseDeletor.macOS.zip (89MB), DatabaseDeletor.Windows.zip (93MB), README.md, version.txt
+- Each ZIP contains both cli/ and desktop/ directories with self-contained executables
+- Desktop .exe now has embedded database icon
 
 ## Next Step
-None — icon embedded in exe, Windows ZIP rebuilt
+None — release fully completed.
 
 ## Files Modified This Session
-- `src/DatabaseDeletor.Desktop/Assets/app-icon.ico` — new, multi-size database icon (16-256px, 9 sizes)
+- `src/DatabaseDeletor.Desktop/Assets/app-icon.ico` — new, multi-size database icon
 - `src/DatabaseDeletor.Desktop/Assets/app-icon.png` — new, 256x256 PNG for Avalonia window icon
 - `src/DatabaseDeletor.Desktop/DatabaseDeletor.Desktop.csproj` — added ApplicationIcon and AvaloniaResource
-- `src/DatabaseDeletor.Desktop/Views/MainWindow.axaml` — added Icon attribute with avares:// URI
-- `DEPLOYMENT/DatabaseDeletor.Windows.zip` — rebuilt with icon-embedded exe (93MB)
+- `src/DatabaseDeletor.Desktop/Views/MainWindow.axaml` — added Icon attribute
+- `version.txt` — bumped 1.1.0 → 1.2.0
 
 ## Open Decisions
 - None
@@ -30,11 +33,13 @@ None — icon embedded in exe, Windows ZIP rebuilt
 
 ## Git State
 - Branch: master
-- Last commit: 8ee07fc Add table exclusion, global config, Desktop GUI, and v1.1.0 release
-- Uncommitted changes: yes (icon files + csproj + axaml edits)
+- Last commit: 95ba37d Add database icon to Desktop executable and bump to v1.2.0
+- Pushed to: origin/main
+- Release: R-1.2.0 (PUBLISHED, not draft)
 
 ## Loaded Rules
 - general.md, dotnet.md
 
 ## User Preferences (This Session)
 - Desktop exe needs custom database icon
+- Publish using dedicated _GithubPublish.sh script

@@ -273,3 +273,24 @@
 - Action: Published Desktop + CLI for win-x64, rebuilt DatabaseDeletor.Windows.zip
 - Files: DEPLOYMENT/staging/windows/desktop/ (rebuilt), DEPLOYMENT/DatabaseDeletor.Windows.zip (93MB)
 - Result: .exe size grew 159KB→169KB confirming icon embedded in PE header
+
+## [2026-02-20 14:13] Step 4: Bump version and commit
+- Action: Updated version.txt 1.1.0→1.2.0, committed all icon changes + version bump, pushed master→main
+- Files: version.txt, git commit 95ba37d
+- Result: Push successful to origin/main
+
+## [2026-02-20 14:14] Step 5: Cross-platform publish (CLI + Desktop)
+- Action: Published 6 combinations: CLI + Desktop for linux-x64, osx-arm64, win-x64. All self-contained.
+- Files: DEPLOYMENT/staging/{linux,macos,windows}/{cli,desktop}/
+- Result: All 6 publishes succeeded
+
+## [2026-02-20 14:14] Step 6: Create ZIP artifacts
+- Action: Created 3 platform ZIPs with cli/ and desktop/ subdirectories
+- Files: DEPLOYMENT/DatabaseDeletor.{Linux,macOS,Windows}.zip
+- Result: Linux 91MB, macOS 89MB, Windows 93MB
+
+## [2026-02-20 14:15] Step 7: GitHub Release R-1.2.0 via _GithubPublish.sh
+- Action: Ran _GithubPublish.sh --repo-dir . --github-repo michalagata/DatabaseDeletor --force
+- Result: Release R-1.2.0 created and verified — PUBLISHED (not draft), 5 assets
+- URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.2.0
+- Assets: DatabaseDeletor.Linux.zip (91MB), DatabaseDeletor.macOS.zip (89MB), DatabaseDeletor.Windows.zip (93MB), README.md, version.txt
