@@ -48,6 +48,7 @@ public partial class App : Avalonia.Application
         serviceCollection.AddTransient<AnalysisStepViewModel>();
         serviceCollection.AddTransient<ConditionsStepViewModel>();
         serviceCollection.AddTransient<SummaryStepViewModel>();
+        serviceCollection.AddTransient<DeletionSettingsStepViewModel>();
         serviceCollection.AddTransient<ExecutionStepViewModel>();
         Services = serviceCollection.BuildServiceProvider();
     }

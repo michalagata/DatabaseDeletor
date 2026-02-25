@@ -22,12 +22,16 @@ internal sealed class DeletionService
         bool skipConfirmation,
         string[] excludedTableNames,
         IReadOnlyList<TableInfo> globalExcludedTables,
+        DeletionOptions deletionOptions,
         CancellationToken ct)
     {
         var mediator = _services.GetRequiredService<IMediator>();
         var sqlParser = _services.GetRequiredService<ISqlParser>();
 
         ConsoleRenderer.WriteHeader();
+
+        // Display deletion settings
+        ConsoleRenderer.WriteDeletionSettings(deletionOptions);
 
         // Report global exclusions (from appsettings.json)
         if (globalExcludedTables.Count > 0)
@@ -108,7 +112,7 @@ internal sealed class DeletionService
         var report = await ConsoleRenderer.ExecuteWithProgressBar(async progress =>
         {
             return await mediator.SendAsync(
-                new ExecuteDeletionCommand(connectionString, plan, progress), ct).ConfigureAwait(false);
+                new ExecuteDeletionCommand(connectionString, plan, deletionOptions, progress), ct).ConfigureAwait(false);
         }, plan.TotalEstimatedRows).ConfigureAwait(false);
 
         // Step 6: Display report

@@ -27,11 +27,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public ConditionsStepViewModel ConditionsStep { get; }
     public AnalysisStepViewModel AnalysisStep { get; }
     public SummaryStepViewModel SummaryStep { get; }
+    public DeletionSettingsStepViewModel DeletionSettingsStep { get; }
     public ExecutionStepViewModel ExecutionStep { get; }
 
     public bool CanGoBack => CurrentStepIndex > 0 && !ExecutionStep.IsExecuting && !IsBusy;
-    public bool CanGoNext => CurrentStepIndex < 4 && !ExecutionStep.IsExecuting && !IsBusy;
-    public bool IsLastStep => CurrentStepIndex == 4;
+    public bool CanGoNext => CurrentStepIndex < 5 && !ExecutionStep.IsExecuting && !IsBusy;
+    public bool IsLastStep => CurrentStepIndex == 5;
 
     public IReadOnlyList<string> StepTitles { get; } =
     [
@@ -39,7 +40,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         "2. Root Table & Conditions",
         "3. Dependency Analysis",
         "4. Summary",
-        "5. Execution"
+        "5. Deletion Settings",
+        "6. Execution"
     ];
 
     public MainWindowViewModel(
@@ -47,12 +49,14 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         AnalysisStepViewModel analysisStep,
         ConditionsStepViewModel conditionsStep,
         SummaryStepViewModel summaryStep,
+        DeletionSettingsStepViewModel deletionSettingsStep,
         ExecutionStepViewModel executionStep)
     {
         ConnectionStep = connectionStep;
         AnalysisStep = analysisStep;
         ConditionsStep = conditionsStep;
         SummaryStep = summaryStep;
+        DeletionSettingsStep = deletionSettingsStep;
         ExecutionStep = executionStep;
         _currentStep = connectionStep;
     }
@@ -119,15 +123,22 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
                 break;
 
-            case 3: // Summary → Execution
+            case 3: // Summary → Deletion Settings
                 if (SummaryStep.Plan is null) return;
+                CurrentStepIndex++;
+                UpdateCurrentStep();
+                break;
+
+            case 4: // Deletion Settings → Execution
+                if (DeletionSettingsStep.HasValidationErrors) return;
                 CurrentStepIndex++;
                 UpdateCurrentStep();
                 IsBusy = true;
                 try
                 {
+                    var deletionOptions = DeletionSettingsStep.ToDeletionOptions();
                     await ExecutionStep.ExecuteCommand.ExecuteAsync(
-                        (ConnectionStep.ConnectionString, SummaryStep.Plan)).ConfigureAwait(true);
+                        (ConnectionStep.ConnectionString, SummaryStep.Plan!, deletionOptions)).ConfigureAwait(true);
                 }
                 finally
                 {
@@ -153,7 +164,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             1 => ConditionsStep,
             2 => AnalysisStep,
             3 => SummaryStep,
-            4 => ExecutionStep,
+            4 => DeletionSettingsStep,
+            5 => ExecutionStep,
             _ => ConnectionStep
         };
     }

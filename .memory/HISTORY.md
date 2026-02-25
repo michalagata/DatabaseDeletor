@@ -366,3 +366,16 @@
 - Result: Release R-1.3.0 PUBLISHED, 5 assets
 - URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.3.0
 - Commit: 96c766e
+
+## [2026-02-25 14:30] Session 13: R-1.5.0 — Separate bugfix release
+- Action: Bumped 1.4.0→1.5.0 (user insisted on new version after bugfix), rebuilt all platforms, published R-1.5.0
+- Result: R-1.5.0 PUBLISHED
+- URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.5.0
+
+## [2026-02-25 14:55] Session 14: Copyright + Help/About + Documentation viewer
+- Task: Add CLI copyright banner, Desktop Help→About→Documentation windows, v1.6.0 release
+- Action: Added "(c) 2026 Michael Agata, Anubisworks. All Rights Reserved!" to CLI startup. Created AboutWindow (version + copyright + Documentation button), DocumentationWindow (renders README.md via Markdown.Avalonia). Added Help button to MainWindow bottom bar. Added Markdown.Avalonia.Tight 11.0.2 to CPM. Bumped version 1.5.0→1.6.0. Built Release (0W 0E), 224 tests pass. Published 6 platform combinations. Created 3 ZIPs. Committed, pushed master→main, ran _GithubPublish.sh.
+- Files: 10 files (6 modified, 4 new) — see STATE.md
+- Result: Release R-1.6.0 PUBLISHED (not draft), 5 assets
+- URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.6.0
+- Commit: 824bc98

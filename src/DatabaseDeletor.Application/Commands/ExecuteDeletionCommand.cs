@@ -6,4 +6,5 @@ namespace DatabaseDeletor.Application.Commands;
 public sealed record ExecuteDeletionCommand(
     string ConnectionString,
     DeletionPlan Plan,
+    DeletionOptions Options,
     IProgress<DeletionProgress>? Progress = null) : IRequest<DeletionReport>;

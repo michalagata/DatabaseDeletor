@@ -3,6 +3,8 @@ using System.Globalization;
 using DatabaseDeletor.Application;
 using DatabaseDeletor.Application.Configuration;
 using DatabaseDeletor.Cli;
+using DatabaseDeletor.Domain.Entities;
+using DatabaseDeletor.Domain.Enums;
 using DatabaseDeletor.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -47,8 +49,19 @@ try
 
     var batchSizeOption = new Option<int>("--batch-size", "-b")
     {
-        Description = "Batch size for bulk deletion operations",
-        DefaultValueFactory = _ => 10000
+        Description = "Batch size for bulk deletion (100-1000000, default: 10000, only for BatchDelete mode)",
+        DefaultValueFactory = _ => DeletionOptions.DefaultBatchSize
+    };
+
+    var deletionModeOption = new Option<DeletionMode>("--deletion-mode", "-m")
+    {
+        Description = "Deletion mode: BatchDelete, SingleRowDelete, or DirectDelete (default: BatchDelete)",
+        DefaultValueFactory = _ => DeletionMode.BatchDelete
+    };
+
+    var useTransactionOption = new Option<bool>("--use-transaction", "-t")
+    {
+        Description = "Wrap entire deletion in a single transaction (default: false)"
     };
 
     var excludeTablesOption = new Option<string[]>("--exclude-tables", "-e")
@@ -66,6 +79,8 @@ try
     rootCommand.Add(sqlOption);
     rootCommand.Add(noConfirmOption);
     rootCommand.Add(batchSizeOption);
+    rootCommand.Add(deletionModeOption);
+    rootCommand.Add(useTransactionOption);
     rootCommand.Add(excludeTablesOption);
     rootCommand.Add(verboseOption);
 
@@ -74,8 +89,25 @@ try
         var connectionString = result.GetRequiredValue(connectionStringOption);
         var sql = result.GetRequiredValue(sqlOption);
         var noConfirm = result.GetValue(noConfirmOption);
+        var batchSize = result.GetValue(batchSizeOption);
+        var deletionMode = result.GetValue(deletionModeOption);
+        var useTransaction = result.GetValue(useTransactionOption);
         var excludeTables = result.GetValue(excludeTablesOption) ?? [];
         var verbose = result.GetValue(verboseOption);
+
+        var deletionOptions = new DeletionOptions
+        {
+            Mode = deletionMode,
+            BatchSize = batchSize,
+            UseTransaction = useTransaction
+        };
+
+        if (!deletionOptions.IsValid)
+        {
+            ConsoleRenderer.WriteError(
+                $"Invalid batch size: {batchSize}. Must be between {DeletionOptions.MinBatchSize} and {DeletionOptions.MaxBatchSize}.");
+            return;
+        }
 
         if (verbose)
         {
@@ -110,7 +142,7 @@ try
 
         try
         {
-            await deletionService.RunAsync(connectionString, sql, noConfirm, excludeTables, globalExcludedTables, ct).ConfigureAwait(false);
+            await deletionService.RunAsync(connectionString, sql, noConfirm, excludeTables, globalExcludedTables, deletionOptions, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

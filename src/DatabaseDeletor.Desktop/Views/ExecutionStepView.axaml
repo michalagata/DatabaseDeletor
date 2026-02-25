@@ -5,7 +5,7 @@
              x:DataType="vm:ExecutionStepViewModel">
 
     <StackPanel Spacing="16">
-        <TextBlock Text="Step 5: Execution" FontSize="20" FontWeight="Bold" />
+        <TextBlock Text="Step 6: Execution" FontSize="20" FontWeight="Bold" />
 
         <StackPanel Spacing="8">
             <TextBlock Text="{Binding CurrentStepDescription}" FontSize="14" />

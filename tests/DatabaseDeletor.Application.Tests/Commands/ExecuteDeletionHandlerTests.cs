@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 
 public sealed class ExecuteDeletionHandlerTests
 {
+    private static readonly DeletionOptions DefaultOptions = new();
+
     private readonly IDeletionExecutor _executor = Substitute.For<IDeletionExecutor>();
     private readonly ILogger<ExecuteDeletionHandler> _logger = Substitute.For<ILogger<ExecuteDeletionHandler>>();
     private readonly ExecuteDeletionHandler _sut;
@@ -35,10 +37,10 @@ public sealed class ExecuteDeletionHandlerTests
             CompletedAt = DateTime.UtcNow
         };
 
-        _executor.ExecuteAsync("conn", plan, null, Arg.Any<CancellationToken>())
+        _executor.ExecuteAsync("conn", plan, DefaultOptions, null, Arg.Any<CancellationToken>())
             .Returns(expectedReport);
 
-        var command = new ExecuteDeletionCommand("conn", plan);
+        var command = new ExecuteDeletionCommand("conn", plan, DefaultOptions);
 
         var result = await _sut.HandleAsync(command);
 
@@ -68,14 +70,14 @@ public sealed class ExecuteDeletionHandlerTests
             CompletedAt = DateTime.UtcNow
         };
 
-        _executor.ExecuteAsync("conn", plan, progress, Arg.Any<CancellationToken>())
+        _executor.ExecuteAsync("conn", plan, DefaultOptions, progress, Arg.Any<CancellationToken>())
             .Returns(expectedReport);
 
-        var command = new ExecuteDeletionCommand("conn", plan, progress);
+        var command = new ExecuteDeletionCommand("conn", plan, DefaultOptions, progress);
 
         await _sut.HandleAsync(command);
 
-        await _executor.Received(1).ExecuteAsync("conn", plan, progress, Arg.Any<CancellationToken>());
+        await _executor.Received(1).ExecuteAsync("conn", plan, DefaultOptions, progress, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -95,10 +97,10 @@ public sealed class ExecuteDeletionHandlerTests
             CompletedAt = DateTime.UtcNow
         };
 
-        _executor.ExecuteAsync("conn", plan, null, Arg.Any<CancellationToken>())
+        _executor.ExecuteAsync("conn", plan, DefaultOptions, null, Arg.Any<CancellationToken>())
             .Returns(reportWithErrors);
 
-        var command = new ExecuteDeletionCommand("conn", plan);
+        var command = new ExecuteDeletionCommand("conn", plan, DefaultOptions);
 
         var result = await _sut.HandleAsync(command);
 

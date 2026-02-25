@@ -1,5 +1,6 @@
 using System.Globalization;
 using DatabaseDeletor.Domain.Entities;
+using DatabaseDeletor.Domain.Enums;
 using Spectre.Console;
 
 namespace DatabaseDeletor.Cli;
@@ -15,6 +16,36 @@ internal static class ConsoleRenderer
         AnsiConsole.MarkupLine("[grey]Mass database deletion tool with dependency analysis[/]");
         AnsiConsole.WriteLine();
     }
+
+    public static void WriteDeletionSettings(DeletionOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        AnsiConsole.Write(new Rule("[bold cyan]Deletion Settings[/]").RuleStyle("grey"));
+        AnsiConsole.MarkupLine($"  [bold]Mode:[/] {Markup.Escape(FormatMode(options.Mode))}");
+
+        if (options.Mode == DeletionMode.BatchDelete)
+        {
+            AnsiConsole.MarkupLine($"  [bold]Batch Size:[/] {options.BatchSize.ToString("N0", CultureInfo.InvariantCulture)}");
+        }
+
+        AnsiConsole.MarkupLine($"  [bold]Transaction:[/] {(options.UseTransaction ? "[yellow]Enabled[/]" : "Disabled")}");
+
+        if (options.UseTransaction)
+        {
+            AnsiConsole.MarkupLine("  [yellow]![/] [yellow]Warning: large deletions with transactions may cause lock escalation and timeouts[/]");
+        }
+
+        AnsiConsole.WriteLine();
+    }
+
+    private static string FormatMode(DeletionMode mode) => mode switch
+    {
+        DeletionMode.BatchDelete => "Batch Delete (splits deletion into configurable batches)",
+        DeletionMode.SingleRowDelete => "Single Row Delete (deletes one row at a time)",
+        DeletionMode.DirectDelete => "Direct Delete (one SQL statement per table, no batching)",
+        _ => mode.ToString()
+    };
 
     public static void WriteStep(int step, string message)
     {

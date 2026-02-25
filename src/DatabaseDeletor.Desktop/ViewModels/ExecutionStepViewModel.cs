@@ -45,7 +45,7 @@ public sealed partial class ExecutionStepViewModel : ViewModelBase
 
     [RelayCommand]
     private async Task ExecuteAsync(
-        (string ConnectionString, DeletionPlan Plan) args,
+        (string ConnectionString, DeletionPlan Plan, DeletionOptions Options) args,
         CancellationToken ct)
     {
         IsExecuting = true;
@@ -70,7 +70,7 @@ public sealed partial class ExecutionStepViewModel : ViewModelBase
             });
 
             Report = await _mediator.SendAsync(
-                new ExecuteDeletionCommand(args.ConnectionString, args.Plan, progress), ct).ConfigureAwait(true);
+                new ExecuteDeletionCommand(args.ConnectionString, args.Plan, args.Options, progress), ct).ConfigureAwait(true);
 
             TotalDeletedRows = Report.TotalDeletedRows;
             HasErrors = Report.HasErrors;

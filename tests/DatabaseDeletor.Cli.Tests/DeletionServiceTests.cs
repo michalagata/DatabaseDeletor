@@ -8,6 +8,8 @@ namespace DatabaseDeletor.Cli.Tests;
 
 public sealed class DeletionServiceTests
 {
+    private static readonly DeletionOptions DefaultOptions = new();
+
     private static TableInfo CreateTable(string schema = "dbo", string name = "Users") =>
         new() { Schema = schema, Name = name };
 
@@ -99,7 +101,7 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("Server=.;Database=TestDb", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], CancellationToken.None);
+        await sut.RunAsync("Server=.;Database=TestDb", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], DefaultOptions, CancellationToken.None);
 
         // Assert — all three commands were sent
         await mediator.Received(1).SendAsync(Arg.Any<AnalyzeDependenciesCommand>(), Arg.Any<CancellationToken>());
@@ -119,7 +121,7 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], CancellationToken.None);
+        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], DefaultOptions, CancellationToken.None);
 
         // Assert
         parser.Received(1).Parse("DELETE FROM dbo.Users WHERE Id = 1");
@@ -137,7 +139,7 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("conn", "DELETE FROM dbo.Orders WHERE Id = 1", skipConfirmation: true, [], [], CancellationToken.None);
+        await sut.RunAsync("conn", "DELETE FROM dbo.Orders WHERE Id = 1", skipConfirmation: true, [], [], DefaultOptions, CancellationToken.None);
 
         // Assert
         await mediator.Received(1).SendAsync(
@@ -158,7 +160,7 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], CancellationToken.None);
+        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], DefaultOptions, CancellationToken.None);
 
         // Assert — ExecuteDeletionCommand was sent with a progress handler
         await mediator.Received(1).SendAsync(
@@ -191,7 +193,7 @@ public sealed class DeletionServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            sut.RunAsync("conn", "DELETE FROM dbo.Users", skipConfirmation: true, [], [], CancellationToken.None));
+            sut.RunAsync("conn", "DELETE FROM dbo.Users", skipConfirmation: true, [], [], DefaultOptions, CancellationToken.None));
     }
 
     [Fact]
@@ -211,7 +213,7 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("conn", "DELETE FROM dbo.Users", skipConfirmation: true, [], [], CancellationToken.None);
+        await sut.RunAsync("conn", "DELETE FROM dbo.Users", skipConfirmation: true, [], [], DefaultOptions, CancellationToken.None);
 
         // Assert
         await mediator.Received(1).SendAsync(Arg.Any<ExecuteDeletionCommand>(), Arg.Any<CancellationToken>());
@@ -230,9 +232,36 @@ public sealed class DeletionServiceTests
         var sut = new DeletionService(sp);
 
         // Act
-        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], CancellationToken.None);
+        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], DefaultOptions, CancellationToken.None);
 
         // Assert — the analyze command was sent
         await mediator.Received(1).SendAsync(Arg.Any<AnalyzeDependenciesCommand>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RunAsync_PassesDeletionOptionsToCommand()
+    {
+        // Arrange
+        var table = CreateTable();
+        var graph = CreateGraph(table);
+        var plan = CreatePlan(table);
+        var report = CreateReport(table);
+        var (sp, mediator, _) = CreateServiceProvider(table, graph, plan, report);
+        var sut = new DeletionService(sp);
+
+        var customOptions = new DeletionOptions
+        {
+            Mode = Domain.Enums.DeletionMode.DirectDelete,
+            BatchSize = 5000,
+            UseTransaction = true
+        };
+
+        // Act
+        await sut.RunAsync("conn", "DELETE FROM dbo.Users WHERE Id = 1", skipConfirmation: true, [], [], customOptions, CancellationToken.None);
+
+        // Assert — ExecuteDeletionCommand was sent with custom options
+        await mediator.Received(1).SendAsync(
+            Arg.Is<ExecuteDeletionCommand>(c => c.Options == customOptions),
+            Arg.Any<CancellationToken>());
     }
 }

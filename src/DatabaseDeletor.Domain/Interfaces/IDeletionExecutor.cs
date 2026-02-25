@@ -7,6 +7,7 @@ public interface IDeletionExecutor
     Task<DeletionReport> ExecuteAsync(
         string connectionString,
         DeletionPlan plan,
+        DeletionOptions options,
         IProgress<DeletionProgress>? progress = null,
         CancellationToken ct = default);
 }

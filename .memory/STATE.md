@@ -1,24 +1,31 @@
 # Current State
 
 ## Active Task
-Fix Desktop XAML crash + logging + UI freezing — R-1.4.0 release
+Add copyright notice, Help/About/Documentation windows — R-1.6.0 release
 
 ## Status
 completed
 
 ## Completion
-100% — Committed, pushed, release re-published on GitHub
+100% — Committed, pushed, release published on GitHub
 
 ## Last Action
-Fixed XAML type resolution crash in ConditionsStepView — compiled binding `$parent[ItemsControl].((vm:ConditionsStepViewModel)DataContext).RemoveConditionCommand` replaced with `$parent[ItemsControl].Tag` pattern. Re-published R-1.4.0.
+Published R-1.6.0 release with Help/About window, Documentation viewer, and CLI copyright banner.
 
 ## Next Step
 None — release fully completed.
 
 ## Files Modified This Session
-- All 10 files from logging/crash/UI fix — see HISTORY.md Session 12
-- `src/DatabaseDeletor.Desktop/Views/ConditionsStepView.axaml` — Tag binding pattern for RemoveConditionCommand
-- `version.txt` — bumped 1.3.0 → 1.4.0
+- `Directory.Packages.props` — added Markdown.Avalonia.Tight 11.0.2
+- `src/DatabaseDeletor.Cli/Program.cs` — copyright banner at startup
+- `src/DatabaseDeletor.Desktop/DatabaseDeletor.Desktop.csproj` — Markdown.Avalonia.Tight, README.md + version.txt as Content
+- `src/DatabaseDeletor.Desktop/Views/AboutWindow.axaml` — NEW: About window with copyright + version
+- `src/DatabaseDeletor.Desktop/Views/AboutWindow.axaml.cs` — NEW: code-behind with version loading + Documentation link
+- `src/DatabaseDeletor.Desktop/Views/DocumentationWindow.axaml` — NEW: Markdown viewer window
+- `src/DatabaseDeletor.Desktop/Views/DocumentationWindow.axaml.cs` — NEW: code-behind loading README.md
+- `src/DatabaseDeletor.Desktop/Views/MainWindow.axaml` — Help button in bottom bar
+- `src/DatabaseDeletor.Desktop/Views/MainWindow.axaml.cs` — OnHelpClick handler
+- `version.txt` — bumped 1.5.0 → 1.6.0
 
 ## Open Decisions
 - None
@@ -28,12 +35,13 @@ None — release fully completed.
 
 ## Git State
 - Branch: master
-- Last commit: 19f62b9 Fix XAML type resolution crash in ConditionsStepView Remove button
+- Last commit: 824bc98 Add copyright notice, Help/About window, and Documentation viewer, v1.6.0
 - Pushed to: origin/main
-- Release: R-1.4.0 (PUBLISHED, re-created with fix)
+- Release: R-1.6.0 (PUBLISHED, 5 assets)
 
 ## Loaded Rules
 - general.md, dotnet.md
 
 ## User Preferences (This Session)
-- Commit, push, and release via dedicated _GithubPublish.sh script
+- Commit, push, and release only when explicitly asked
+- Separate version numbers for bugfix releases (never reuse a version)

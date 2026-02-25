@@ -1,0 +1,84 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DatabaseDeletor.Desktop.ViewModels"
+             xmlns:enums="using:DatabaseDeletor.Domain.Enums"
+             x:Class="DatabaseDeletor.Desktop.Views.DeletionSettingsStepView"
+             x:DataType="vm:DeletionSettingsStepViewModel">
+
+    <StackPanel Spacing="16">
+        <TextBlock Text="Step 5: Deletion Settings" FontSize="20" FontWeight="Bold" />
+        <TextBlock Text="Configure how the deletion will be executed."
+                   Foreground="#AAAAAA" FontSize="13" />
+
+        <Separator Margin="0,4" />
+
+        <!-- Deletion Mode -->
+        <StackPanel Spacing="8">
+            <TextBlock Text="Deletion Mode" FontWeight="SemiBold" FontSize="14" />
+            <ComboBox ItemsSource="{Binding AvailableModes}"
+                      SelectedItem="{Binding SelectedMode}"
+                      MinWidth="350">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <TextBlock Foreground="#888888" FontSize="12" Margin="4,0,0,0"
+                       IsVisible="{Binding SelectedMode, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <TextBlock.Text>
+                    <MultiBinding StringFormat="{}{0}">
+                        <Binding Path="SelectedMode" />
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
+        </StackPanel>
+
+        <Separator Margin="0,4" />
+
+        <!-- Batch Settings (visible only for BatchDelete) -->
+        <StackPanel Spacing="8" IsVisible="{Binding IsBatchMode}">
+            <TextBlock Text="Batch Settings" FontWeight="SemiBold" FontSize="14" />
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="Batch Size:" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding BatchSize}"
+                               Minimum="1" Maximum="1000000"
+                               Increment="1000"
+                               FormatString="N0"
+                               MinWidth="180" />
+            </StackPanel>
+            <TextBlock Text="Valid range: 100 – 1,000,000" Foreground="#888888" FontSize="12" Margin="4,0,0,0" />
+            <TextBlock Text="{Binding BatchSizeError}" Foreground="Red" FontSize="12"
+                       IsVisible="{Binding BatchSizeError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+
+        <Separator Margin="0,4" />
+
+        <!-- Transaction -->
+        <StackPanel Spacing="8">
+            <TextBlock Text="Transaction" FontWeight="SemiBold" FontSize="14" />
+            <CheckBox Content="Wrap entire deletion in a transaction"
+                      IsChecked="{Binding UseTransaction}" />
+            <TextBlock Text="Warning: large deletions with transactions may cause lock escalation and timeouts."
+                       Foreground="Orange" FontSize="12" Margin="24,0,0,0"
+                       IsVisible="{Binding UseTransaction}"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Separator Margin="0,4" />
+
+        <!-- Summary -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Summary" FontWeight="SemiBold" FontSize="14" />
+            <TextBlock Text="{Binding ModeSummary}" FontSize="13" Foreground="#CCCCCC" />
+        </StackPanel>
+
+        <TextBlock Text="Click 'Next' to start the deletion. This action cannot be undone."
+                   Foreground="Orange" FontWeight="SemiBold" Margin="0,8,0,0"
+                   IsVisible="{Binding !HasValidationErrors}" />
+        <TextBlock Text="Fix validation errors above before proceeding."
+                   Foreground="Red" FontWeight="SemiBold" Margin="0,8,0,0"
+                   IsVisible="{Binding HasValidationErrors}" />
+    </StackPanel>
+</UserControl>

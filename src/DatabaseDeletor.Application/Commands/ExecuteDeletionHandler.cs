@@ -24,6 +24,7 @@ public sealed partial class ExecuteDeletionHandler : IRequestHandler<ExecuteDele
         var report = await _executor.ExecuteAsync(
             request.ConnectionString,
             request.Plan,
+            request.Options,
             request.Progress,
             ct).ConfigureAwait(false);
 
