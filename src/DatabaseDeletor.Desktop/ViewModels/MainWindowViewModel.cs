@@ -17,8 +17,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private ViewModelBase _currentStep;
 
     public ConnectionStepViewModel ConnectionStep { get; }
-    public AnalysisStepViewModel AnalysisStep { get; }
     public ConditionsStepViewModel ConditionsStep { get; }
+    public AnalysisStepViewModel AnalysisStep { get; }
     public SummaryStepViewModel SummaryStep { get; }
     public ExecutionStepViewModel ExecutionStep { get; }
 
@@ -29,8 +29,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public IReadOnlyList<string> StepTitles { get; } =
     [
         "1. Connection & Tables",
-        "2. Dependency Analysis",
-        "3. Conditions",
+        "2. Root Table & Conditions",
+        "3. Dependency Analysis",
         "4. Summary",
         "5. Execution"
     ];
@@ -65,36 +65,36 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         switch (CurrentStepIndex)
         {
-            case 0:
+            case 0: // Connection → Conditions
                 if (!ConnectionStep.IsConnected) return;
+                ConditionsStep.LoadTables(ConnectionStep.GetSelectedTables(), ConnectionStep.ConnectionString);
+                CurrentStepIndex++;
+                UpdateCurrentStep();
+                break;
+
+            case 1: // Conditions → Analysis
+                if (ConditionsStep.EffectiveRootTable is null) return;
                 CurrentStepIndex++;
                 UpdateCurrentStep();
                 await AnalysisStep.AnalyzeCommand.ExecuteAsync(
                     (ConnectionStep.ConnectionString,
+                     ConditionsStep.EffectiveRootTable,
                      ConnectionStep.GetSelectedTables(),
                      ConnectionStep.GetExcludedTables())).ConfigureAwait(true);
                 break;
 
-            case 1:
+            case 2: // Analysis → Summary
                 if (!AnalysisStep.IsValid || AnalysisStep.Graph is null) return;
-                ConditionsStep.LoadTables(AnalysisStep.Graph);
                 CurrentStepIndex++;
                 UpdateCurrentStep();
-                break;
-
-            case 2:
-                if (ConditionsStep.SelectedReferenceTable is null || AnalysisStep.Graph is null) return;
-                CurrentStepIndex++;
-                UpdateCurrentStep();
-                var whereClause = ConditionsStep.DeleteAll ? null : ConditionsStep.WhereClause;
                 await SummaryStep.GeneratePlanCommand.ExecuteAsync(
                     (ConnectionStep.ConnectionString,
                      AnalysisStep.Graph,
-                     ConditionsStep.SelectedReferenceTable,
-                     string.IsNullOrWhiteSpace(whereClause) ? null : whereClause)).ConfigureAwait(true);
+                     ConditionsStep.EffectiveRootTable!,
+                     ConditionsStep.WhereClause)).ConfigureAwait(true);
                 break;
 
-            case 3:
+            case 3: // Summary → Execution
                 if (SummaryStep.Plan is null) return;
                 CurrentStepIndex++;
                 UpdateCurrentStep();
@@ -116,8 +116,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         CurrentStep = CurrentStepIndex switch
         {
             0 => ConnectionStep,
-            1 => AnalysisStep,
-            2 => ConditionsStep,
+            1 => ConditionsStep,
+            2 => AnalysisStep,
             3 => SummaryStep,
             4 => ExecutionStep,
             _ => ConnectionStep

@@ -1,35 +1,122 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:DatabaseDeletor.Desktop.ViewModels"
+             xmlns:conv="using:DatabaseDeletor.Desktop.Converters"
+             xmlns:domain="using:DatabaseDeletor.Domain.Entities"
              x:Class="DatabaseDeletor.Desktop.Views.ConditionsStepView"
              x:DataType="vm:ConditionsStepViewModel">
 
-    <StackPanel Spacing="16">
-        <TextBlock Text="Step 3: Reference Table and Conditions" FontSize="20" FontWeight="Bold" />
+    <UserControl.Resources>
+        <conv:EnumToBooleanConverter x:Key="EnumToBoolConverter" />
+    </UserControl.Resources>
 
-        <TextBlock Text="Select the reference (root) table for deletion:" />
-        <ComboBox ItemsSource="{Binding AvailableTables}"
-                  SelectedItem="{Binding SelectedReferenceTable}"
-                  HorizontalAlignment="Stretch">
-            <ComboBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding FullName}" />
-                </DataTemplate>
-            </ComboBox.ItemTemplate>
-        </ComboBox>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16" Margin="0,0,0,16">
+            <TextBlock Text="Step 2: Root Table and Conditions" FontSize="20" FontWeight="Bold" />
 
-        <Separator />
+            <!-- Root Table Selection -->
+            <TextBlock Text="Select the root table for deletion:" />
+            <ComboBox ItemsSource="{Binding AvailableTables}"
+                      SelectedItem="{Binding SelectedReferenceTable}"
+                      HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding FullName}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
 
-        <TextBlock Text="Deletion Scope:" FontWeight="SemiBold" />
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsLoadingColumns}" Height="2" />
 
-        <RadioButton GroupName="DeletionScope" Content="Delete ALL rows"
-                     IsChecked="{Binding DeleteAll}" />
-        <RadioButton GroupName="DeletionScope" Content="Delete with WHERE condition"
-                     IsChecked="{Binding !DeleteAll}" />
+            <Separator />
 
-        <StackPanel IsVisible="{Binding !DeleteAll}" Spacing="8" Margin="24,0,0,0">
-            <TextBlock Text="WHERE clause:" />
-            <TextBox Text="{Binding WhereClause}" Watermark="e.g. CreatedDate &lt; '2024-01-01'" AcceptsReturn="True" MinHeight="60" />
+            <!-- Deletion Scope Mode -->
+            <TextBlock Text="Deletion Scope:" FontWeight="SemiBold" />
+
+            <RadioButton GroupName="ScopeMode" Content="Delete ALL rows"
+                         IsChecked="{Binding ScopeMode, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=DeleteAll}" />
+            <RadioButton GroupName="ScopeMode" Content="Delete with WHERE condition (builder)"
+                         IsChecked="{Binding ScopeMode, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=WhereCondition}" />
+            <RadioButton GroupName="ScopeMode" Content="Custom SQL query"
+                         IsChecked="{Binding ScopeMode, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=CustomSql}" />
+
+            <!-- WHERE Builder Panel -->
+            <Border IsVisible="{Binding ScopeMode, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=WhereCondition}"
+                    BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="12" Margin="24,0,0,0">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="WHERE Condition Builder" FontWeight="SemiBold" FontSize="14" />
+
+                    <ItemsControl ItemsSource="{Binding Conditions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:WhereConditionViewModel">
+                                <Border Margin="0,4" Padding="8" Background="#1A1A2E" CornerRadius="4">
+                                    <Grid ColumnDefinitions="80,*,120,*,Auto" RowDefinitions="Auto" Margin="0,2">
+                                        <!-- Logical Operator (AND/OR) -->
+                                        <ComboBox Grid.Column="0" ItemsSource="{Binding LogicalOperators}"
+                                                  SelectedItem="{Binding LogicalOperator}"
+                                                  MinWidth="70" Margin="0,0,6,0" />
+
+                                        <!-- Column -->
+                                        <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableColumns}"
+                                                  SelectedItem="{Binding SelectedColumn}" Margin="0,0,6,0">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate x:DataType="domain:ColumnInfo">
+                                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                                        <TextBlock Text="{Binding Name}" />
+                                                        <TextBlock Text="{Binding DataType}" Foreground="#888" FontSize="11" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+
+                                        <!-- Operator -->
+                                        <ComboBox Grid.Column="2" ItemsSource="{Binding Operators}"
+                                                  SelectedItem="{Binding SelectedOperator}" Margin="0,0,6,0" />
+
+                                        <!-- Value -->
+                                        <TextBox Grid.Column="3" Text="{Binding Value}" Watermark="Value"
+                                                 IsVisible="{Binding !IsUnaryOperator}" Margin="0,0,6,0" />
+                                        <TextBlock Grid.Column="3" Text="(no value needed)" Foreground="#666"
+                                                   IsVisible="{Binding IsUnaryOperator}" VerticalAlignment="Center" Margin="0,0,6,0" />
+
+                                        <!-- Remove Button -->
+                                        <Button Grid.Column="4" Content="X" Foreground="Red"
+                                                Command="{Binding $parent[ItemsControl].((vm:ConditionsStepViewModel)DataContext).RemoveConditionCommand}"
+                                                CommandParameter="{Binding}" Padding="6,2" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button Content="+ Add Condition" Command="{Binding AddConditionCommand}"
+                            HorizontalAlignment="Left" Padding="12,6" />
+
+                    <!-- WHERE Preview -->
+                    <StackPanel Spacing="4" IsVisible="{Binding WhereClausePreview, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Text="Preview:" FontWeight="SemiBold" Foreground="#AAA" />
+                        <Border Background="#111" Padding="8" CornerRadius="4">
+                            <TextBlock Text="{Binding WhereClausePreview}" FontFamily="Consolas,Courier New,monospace"
+                                       Foreground="LimeGreen" TextWrapping="Wrap" />
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Custom SQL Panel -->
+            <Border IsVisible="{Binding ScopeMode, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=CustomSql}"
+                    BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="12" Margin="24,0,0,0">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Custom SQL Query" FontWeight="SemiBold" FontSize="14" />
+                    <TextBlock Text="Write a SELECT FROM or DELETE FROM statement. The WHERE clause and target table will be extracted automatically."
+                               Foreground="#888" TextWrapping="Wrap" FontSize="12" />
+                    <TextBox Text="{Binding CustomSqlQuery}" AcceptsReturn="True" MinHeight="100"
+                             FontFamily="Consolas,Courier New,monospace"
+                             Watermark="e.g. DELETE FROM dbo.Orders WHERE CreatedDate &lt; '2024-01-01'" />
+                    <TextBlock Text="{Binding CustomSqlError}" Foreground="Red"
+                               IsVisible="{Binding CustomSqlError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+            </Border>
         </StackPanel>
-    </StackPanel>
+    </ScrollViewer>
 </UserControl>

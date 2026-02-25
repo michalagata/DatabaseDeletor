@@ -140,6 +140,43 @@ public sealed class PostgreSqlSchemaIntrospector : ISchemaIntrospector
         }
     }
 
+    public async Task<IReadOnlyList<ColumnInfo>> GetColumnsAsync(string connectionString, string schema, string tableName, CancellationToken ct = default)
+    {
+        var connection = new NpgsqlConnection(connectionString);
+        await using (connection.ConfigureAwait(false))
+        {
+            await connection.OpenAsync(ct).ConfigureAwait(false);
+
+            const string sql = """
+                SELECT
+                    c.column_name AS columnname,
+                    c.data_type AS datatype,
+                    CASE WHEN c.is_nullable = 'YES' THEN 1 ELSE 0 END AS isnullable,
+                    CASE WHEN pk.column_name IS NOT NULL THEN 1 ELSE 0 END AS isprimarykey
+                FROM information_schema.columns c
+                LEFT JOIN (
+                    SELECT ku.table_schema, ku.table_name, ku.column_name
+                    FROM information_schema.table_constraints tc
+                    JOIN information_schema.key_column_usage ku
+                        ON tc.constraint_name = ku.constraint_name AND tc.table_schema = ku.table_schema
+                    WHERE tc.constraint_type = 'PRIMARY KEY'
+                ) pk ON c.table_schema = pk.table_schema AND c.table_name = pk.table_name AND c.column_name = pk.column_name
+                WHERE c.table_schema = @Schema AND c.table_name = @Table
+                ORDER BY c.ordinal_position
+                """;
+
+            var results = await connection.QueryAsync<dynamic>(sql, new { Schema = schema, Table = tableName }).ConfigureAwait(false);
+
+            return results.Select(r => new ColumnInfo
+            {
+                Name = r.columnname,
+                DataType = r.datatype,
+                IsNullable = r.isnullable == 1,
+                IsPrimaryKey = r.isprimarykey == 1
+            }).ToList();
+        }
+    }
+
     public async Task<long> GetRowCountAsync(string connectionString, string schema, string tableName, string? whereClause = null, CancellationToken ct = default)
     {
         var connection = new NpgsqlConnection(connectionString);

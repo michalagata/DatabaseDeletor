@@ -38,7 +38,7 @@ public sealed partial class AnalysisStepViewModel : ViewModelBase
 
     [RelayCommand]
     private async Task AnalyzeAsync(
-        (string ConnectionString, IReadOnlyList<TableInfo> SelectedTables, IReadOnlyList<TableInfo> ExcludedTables) args,
+        (string ConnectionString, TableInfo RootTable, IReadOnlyList<TableInfo> SelectedTables, IReadOnlyList<TableInfo> ExcludedTables) args,
         CancellationToken ct)
     {
         IsAnalyzing = true;
@@ -56,9 +56,8 @@ public sealed partial class AnalysisStepViewModel : ViewModelBase
                 return;
             }
 
-            var firstTable = args.SelectedTables[0];
             Graph = await _mediator.SendAsync(
-                new AnalyzeDependenciesCommand(args.ConnectionString, firstTable.Schema, firstTable.Name), ct).ConfigureAwait(true);
+                new AnalyzeDependenciesCommand(args.ConnectionString, args.RootTable.Schema, args.RootTable.Name), ct).ConfigureAwait(true);
 
             TableCount = Graph.Tables.Count;
 

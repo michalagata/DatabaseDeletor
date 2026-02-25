@@ -1,29 +1,38 @@
 # Current State
 
 ## Active Task
-Publish R-1.2.0 release to GitHub with database icon
+Restructure Desktop Wizard — Root Table First, WHERE Builder, Custom SQL
 
 ## Status
 completed
 
 ## Completion
-100% — Release R-1.2.0 published to GitHub with 5 assets
+100% — All 18 files (6 new, 12 modified) implemented, build 0W 0E, 224 tests passing
 
 ## Last Action
-Published GitHub release R-1.2.0 via _GithubPublish.sh script
-- 5 assets: DatabaseDeletor.Linux.zip (91MB), DatabaseDeletor.macOS.zip (89MB), DatabaseDeletor.Windows.zip (93MB), README.md, version.txt
-- Each ZIP contains both cli/ and desktop/ directories with self-contained executables
-- Desktop .exe now has embedded database icon
+Implemented full wizard restructure: swapped Steps 2/3 so user picks root table before dependency analysis, added WHERE condition builder with column/operator/value rows, added Custom SQL mode, created GetColumnsAsync across all layers
 
 ## Next Step
-None — release fully completed.
+None — implementation complete. Ready for manual testing.
 
 ## Files Modified This Session
-- `src/DatabaseDeletor.Desktop/Assets/app-icon.ico` — new, multi-size database icon
-- `src/DatabaseDeletor.Desktop/Assets/app-icon.png` — new, 256x256 PNG for Avalonia window icon
-- `src/DatabaseDeletor.Desktop/DatabaseDeletor.Desktop.csproj` — added ApplicationIcon and AvaloniaResource
-- `src/DatabaseDeletor.Desktop/Views/MainWindow.axaml` — added Icon attribute
-- `version.txt` — bumped 1.1.0 → 1.2.0
+- `src/DatabaseDeletor.Domain/Interfaces/ISchemaIntrospector.cs` — added GetColumnsAsync method
+- `src/DatabaseDeletor.Infrastructure/Database/Introspectors/SqlServerSchemaIntrospector.cs` — implemented GetColumnsAsync
+- `src/DatabaseDeletor.Infrastructure/Database/Introspectors/PostgreSqlSchemaIntrospector.cs` — implemented GetColumnsAsync
+- `src/DatabaseDeletor.Infrastructure/Database/Introspectors/MySqlSchemaIntrospector.cs` — implemented GetColumnsAsync
+- `src/DatabaseDeletor.Infrastructure/Database/Introspectors/OracleSchemaIntrospector.cs` — implemented GetColumnsAsync
+- `src/DatabaseDeletor.Application/Commands/GetColumnsCommand.cs` — new command record
+- `src/DatabaseDeletor.Application/Commands/GetColumnsHandler.cs` — new handler
+- `src/DatabaseDeletor.Application/DependencyInjection.cs` — registered GetColumnsHandler
+- `src/DatabaseDeletor.Desktop/ViewModels/DeletionScopeMode.cs` — new enum (DeleteAll, WhereCondition, CustomSql)
+- `src/DatabaseDeletor.Desktop/ViewModels/WhereConditionViewModel.cs` — new condition row VM with ToSqlFragment()
+- `src/DatabaseDeletor.Desktop/Converters/EnumToBooleanConverter.cs` — new IValueConverter for RadioButton↔enum
+- `src/DatabaseDeletor.Desktop/ViewModels/ConditionsStepViewModel.cs` — rewritten: LoadTables from selected tables, column fetching, WHERE builder, Custom SQL, EffectiveRootTable
+- `src/DatabaseDeletor.Desktop/ViewModels/AnalysisStepViewModel.cs` — args tuple now includes RootTable
+- `src/DatabaseDeletor.Desktop/ViewModels/MainWindowViewModel.cs` — rewritten: step order swapped, navigation updated
+- `src/DatabaseDeletor.Desktop/Views/ConditionsStepView.axaml` — full redesign with 3-mode UI
+- `src/DatabaseDeletor.Desktop/Views/AnalysisStepView.axaml` — title changed to Step 3
+- `tests/DatabaseDeletor.Application.Tests/Commands/GetColumnsHandlerTests.cs` — 5 new tests
 
 ## Open Decisions
 - None
@@ -33,13 +42,13 @@ None — release fully completed.
 
 ## Git State
 - Branch: master
-- Last commit: 95ba37d Add database icon to Desktop executable and bump to v1.2.0
-- Pushed to: origin/main
-- Release: R-1.2.0 (PUBLISHED, not draft)
+- Last commit: 6d98855 Update memory files after R-1.2.0 release, clean nuget.config
+- Uncommitted changes: yes (all changes from this session)
 
 ## Loaded Rules
 - general.md, dotnet.md
 
 ## User Preferences (This Session)
-- Desktop exe needs custom database icon
-- Publish using dedicated _GithubPublish.sh script
+- Root table selection before dependency analysis
+- WHERE condition builder with AND/OR support
+- Custom SQL mode as third option

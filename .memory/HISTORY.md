@@ -294,3 +294,36 @@
 - Result: Release R-1.2.0 created and verified — PUBLISHED (not draft), 5 assets
 - URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.2.0
 - Assets: DatabaseDeletor.Linux.zip (91MB), DatabaseDeletor.macOS.zip (89MB), DatabaseDeletor.Windows.zip (93MB), README.md, version.txt
+
+## [2026-02-25 00:00] Session 11: Restructure Desktop Wizard — Root Table First, WHERE Builder, Custom SQL
+- Task: Swap wizard steps 2/3, add WHERE condition builder, add Custom SQL mode
+
+## [2026-02-25 00:01] Step 1: Domain + Infrastructure — GetColumnsAsync
+- Action: Added GetColumnsAsync to ISchemaIntrospector interface, implemented in all 4 introspectors (SqlServer, PostgreSql, MySql, Oracle) using INFORMATION_SCHEMA.COLUMNS / ALL_TAB_COLUMNS + PK detection
+- Files: ISchemaIntrospector.cs, 4 introspector files
+- Result: Build 0W 0E
+
+## [2026-02-25 00:05] Step 2: Application — GetColumnsCommand + Handler
+- Action: Created GetColumnsCommand record and GetColumnsHandler with provider resolution, registered in DI
+- Files: GetColumnsCommand.cs (new), GetColumnsHandler.cs (new), DependencyInjection.cs (modified)
+- Result: Build 0W 0E
+
+## [2026-02-25 00:10] Step 3: Desktop Supporting Types
+- Action: Created DeletionScopeMode enum (DeleteAll, WhereCondition, CustomSql), WhereConditionViewModel with column/operator/value/logical operator and ToSqlFragment(), EnumToBooleanConverter for RadioButton binding
+- Files: DeletionScopeMode.cs (new), WhereConditionViewModel.cs (new), EnumToBooleanConverter.cs (new)
+- Result: Build 0W 0E
+
+## [2026-02-25 00:15] Step 4: Rewrite Desktop ViewModels
+- Action: Rewrote ConditionsStepViewModel (LoadTables from selected tables, async column fetching, WHERE builder with add/remove conditions, Custom SQL with ISqlParser, EffectiveRootTable property). Modified AnalysisStepViewModel args tuple to include RootTable. Rewrote MainWindowViewModel with swapped step order and updated navigation logic.
+- Files: ConditionsStepViewModel.cs, AnalysisStepViewModel.cs, MainWindowViewModel.cs
+- Result: Build 0W 0E
+
+## [2026-02-25 00:20] Step 5: Redesign AXAML Views
+- Action: Rewrote ConditionsStepView.axaml with 3-section layout (root table ComboBox, 3 RadioButtons via EnumToBooleanConverter, WHERE builder panel with ItemsControl of condition rows, Custom SQL panel with TextBox). Updated AnalysisStepView.axaml title to "Step 3". Fixed AVLN2000 error by adding domain namespace alias.
+- Files: ConditionsStepView.axaml, AnalysisStepView.axaml
+- Result: Build 0W 0E
+
+## [2026-02-25 00:25] Step 6: Tests + Verification
+- Action: Created GetColumnsHandlerTests.cs with 5 tests (valid command, null request, no matching introspector, correct parameters, cancellation token propagation)
+- Files: GetColumnsHandlerTests.cs (new)
+- Result: Build 0W 0E, 224 tests all passing (70 Domain + 57 Application + 64 Infrastructure + 13 CLI + 20 API)

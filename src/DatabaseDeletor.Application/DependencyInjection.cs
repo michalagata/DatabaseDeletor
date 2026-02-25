@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddTransient<IRequestHandler<ExecuteDeletionCommand, DeletionReport>, ExecuteDeletionHandler>();
         services.AddTransient<IRequestHandler<GetAllTablesCommand, IReadOnlyList<TableInfo>>, GetAllTablesHandler>();
         services.AddTransient<IRequestHandler<ValidateExclusionsCommand, ExclusionAnalysisResult>, ValidateExclusionsHandler>();
+        services.AddTransient<IRequestHandler<GetColumnsCommand, IReadOnlyList<ColumnInfo>>, GetColumnsHandler>();
 
         return services;
     }

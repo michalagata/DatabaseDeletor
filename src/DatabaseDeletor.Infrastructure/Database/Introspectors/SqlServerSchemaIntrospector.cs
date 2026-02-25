@@ -139,6 +139,43 @@ public sealed class SqlServerSchemaIntrospector : ISchemaIntrospector
         }
     }
 
+    public async Task<IReadOnlyList<ColumnInfo>> GetColumnsAsync(string connectionString, string schema, string tableName, CancellationToken ct = default)
+    {
+        var connection = new SqlConnection(connectionString);
+        await using (connection.ConfigureAwait(false))
+        {
+            await connection.OpenAsync(ct).ConfigureAwait(false);
+
+            const string sql = """
+                SELECT
+                    c.COLUMN_NAME AS ColumnName,
+                    c.DATA_TYPE AS DataType,
+                    CASE WHEN c.IS_NULLABLE = 'YES' THEN 1 ELSE 0 END AS IsNullable,
+                    CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 1 ELSE 0 END AS IsPrimaryKey
+                FROM INFORMATION_SCHEMA.COLUMNS c
+                LEFT JOIN (
+                    SELECT ku.TABLE_SCHEMA, ku.TABLE_NAME, ku.COLUMN_NAME
+                    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+                    JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE ku
+                        ON tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME AND tc.TABLE_SCHEMA = ku.TABLE_SCHEMA
+                    WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+                ) pk ON c.TABLE_SCHEMA = pk.TABLE_SCHEMA AND c.TABLE_NAME = pk.TABLE_NAME AND c.COLUMN_NAME = pk.COLUMN_NAME
+                WHERE c.TABLE_SCHEMA = @Schema AND c.TABLE_NAME = @Table
+                ORDER BY c.ORDINAL_POSITION
+                """;
+
+            var results = await connection.QueryAsync<dynamic>(sql, new { Schema = schema, Table = tableName }).ConfigureAwait(false);
+
+            return results.Select(r => new ColumnInfo
+            {
+                Name = r.ColumnName,
+                DataType = r.DataType,
+                IsNullable = r.IsNullable == 1,
+                IsPrimaryKey = r.IsPrimaryKey == 1
+            }).ToList();
+        }
+    }
+
     public async Task<long> GetRowCountAsync(string connectionString, string schema, string tableName, string? whereClause = null, CancellationToken ct = default)
     {
         var connection = new SqlConnection(connectionString);

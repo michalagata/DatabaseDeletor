@@ -132,6 +132,43 @@ public sealed class OracleSchemaIntrospector : ISchemaIntrospector
         }).ToList();
     }
 
+    public async Task<IReadOnlyList<ColumnInfo>> GetColumnsAsync(string connectionString, string schema, string tableName, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(schema);
+        ArgumentNullException.ThrowIfNull(tableName);
+
+        using var connection = new OracleConnection(connectionString);
+        await connection.OpenAsync(ct).ConfigureAwait(false);
+
+        const string sql = """
+            SELECT
+                c.COLUMN_NAME AS COLUMNNAME,
+                c.DATA_TYPE AS DATATYPE,
+                CASE WHEN c.NULLABLE = 'Y' THEN 1 ELSE 0 END AS ISNULLABLE,
+                CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 1 ELSE 0 END AS ISPRIMARYKEY
+            FROM ALL_TAB_COLUMNS c
+            LEFT JOIN (
+                SELECT acc.OWNER, acc.TABLE_NAME, acc.COLUMN_NAME
+                FROM ALL_CONSTRAINTS ac
+                JOIN ALL_CONS_COLUMNS acc ON ac.CONSTRAINT_NAME = acc.CONSTRAINT_NAME AND ac.OWNER = acc.OWNER
+                WHERE ac.CONSTRAINT_TYPE = 'P'
+            ) pk ON c.OWNER = pk.OWNER AND c.TABLE_NAME = pk.TABLE_NAME AND c.COLUMN_NAME = pk.COLUMN_NAME
+            WHERE c.OWNER = :Schema AND c.TABLE_NAME = :Table
+            ORDER BY c.COLUMN_ID
+            """;
+
+        var results = await connection.QueryAsync<dynamic>(sql,
+            new { Schema = schema.ToUpperInvariant(), Table = tableName.ToUpperInvariant() }).ConfigureAwait(false);
+
+        return results.Select(r => new ColumnInfo
+        {
+            Name = r.COLUMNNAME,
+            DataType = r.DATATYPE,
+            IsNullable = (decimal)r.ISNULLABLE == 1,
+            IsPrimaryKey = (decimal)r.ISPRIMARYKEY == 1
+        }).ToList();
+    }
+
     public async Task<long> GetRowCountAsync(string connectionString, string schema, string tableName, string? whereClause = null, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(schema);

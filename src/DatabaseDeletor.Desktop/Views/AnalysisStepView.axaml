@@ -5,7 +5,7 @@
              x:DataType="vm:AnalysisStepViewModel">
 
     <StackPanel Spacing="16">
-        <TextBlock Text="Step 2: Dependency Analysis" FontSize="20" FontWeight="Bold" />
+        <TextBlock Text="Step 3: Dependency Analysis" FontSize="20" FontWeight="Bold" />
 
         <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsAnalyzing}" />
         <TextBlock Text="Analyzing dependencies..." IsVisible="{Binding IsAnalyzing}" Foreground="#AAAAAA" />
