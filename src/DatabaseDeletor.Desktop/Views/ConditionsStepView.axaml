@@ -46,7 +46,7 @@
                 <StackPanel Spacing="10">
                     <TextBlock Text="WHERE Condition Builder" FontWeight="SemiBold" FontSize="14" />
 
-                    <ItemsControl ItemsSource="{Binding Conditions}">
+                    <ItemsControl ItemsSource="{Binding Conditions}" Tag="{Binding RemoveConditionCommand}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:WhereConditionViewModel">
                                 <Border Margin="0,4" Padding="8" Background="#1A1A2E" CornerRadius="4">
@@ -81,7 +81,7 @@
 
                                         <!-- Remove Button -->
                                         <Button Grid.Column="4" Content="X" Foreground="Red"
-                                                Command="{Binding $parent[ItemsControl].((vm:ConditionsStepViewModel)DataContext).RemoveConditionCommand}"
+                                                Command="{Binding $parent[ItemsControl].Tag}"
                                                 CommandParameter="{Binding}" Padding="6,2" />
                                     </Grid>
                                 </Border>
