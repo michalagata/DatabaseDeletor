@@ -1,31 +1,24 @@
 # Current State
 
 ## Active Task
-Fix Desktop logging, crash, and UI freezing — 3 critical issues
+Fix Desktop XAML crash + logging + UI freezing — R-1.4.0 release
 
 ## Status
 completed
 
 ## Completion
-100% — All 10 files modified, build 0W 0E, 224 tests passing
+100% — Committed, pushed, release re-published on GitHub
 
 ## Last Action
-Implemented 3-issue fix across 10 files: absolute log paths, global exception handlers, catch-block logging, AddCondition CanExecute guard, IsBusy overlay
+Fixed XAML type resolution crash in ConditionsStepView — compiled binding `$parent[ItemsControl].((vm:ConditionsStepViewModel)DataContext).RemoveConditionCommand` replaced with `$parent[ItemsControl].Tag` pattern. Re-published R-1.4.0.
 
 ## Next Step
-None — ready for testing/release.
+None — release fully completed.
 
 ## Files Modified This Session
-- `src/DatabaseDeletor.Desktop/App.axaml.cs` — absolute log path, System.IO using, ShutdownRequested flush
-- `src/DatabaseDeletor.Desktop/Program.cs` — global exception handlers (AppDomain, TaskScheduler), try/catch/finally with Log.CloseAndFlush()
-- `src/DatabaseDeletor.Cli/Program.cs` — absolute log paths (2 locations)
-- `src/DatabaseDeletor.Desktop/ViewModels/ConditionsStepViewModel.cs` — Log.Warning in catch blocks, CanAddCondition guard, NotifyCanExecuteChangedFor on _isLoadingColumns
-- `src/DatabaseDeletor.Desktop/ViewModels/ConnectionStepViewModel.cs` — Log.Error in catch block
-- `src/DatabaseDeletor.Desktop/ViewModels/AnalysisStepViewModel.cs` — Log.Error in catch block
-- `src/DatabaseDeletor.Desktop/ViewModels/SummaryStepViewModel.cs` — Log.Error in catch block
-- `src/DatabaseDeletor.Desktop/ViewModels/ExecutionStepViewModel.cs` — Log.Fatal in catch block
-- `src/DatabaseDeletor.Desktop/ViewModels/MainWindowViewModel.cs` — IsBusy property, CanGoBack/CanGoNext guards, try/finally wrapping
-- `src/DatabaseDeletor.Desktop/Views/MainWindow.axaml` — Panel wrapper, busy overlay with ProgressBar
+- All 10 files from logging/crash/UI fix — see HISTORY.md Session 12
+- `src/DatabaseDeletor.Desktop/Views/ConditionsStepView.axaml` — Tag binding pattern for RemoveConditionCommand
+- `version.txt` — bumped 1.3.0 → 1.4.0
 
 ## Open Decisions
 - None
@@ -35,11 +28,12 @@ None — ready for testing/release.
 
 ## Git State
 - Branch: master
-- Last commit: 96c766e Restructure Desktop wizard: root table first, WHERE builder, Custom SQL, v1.3.0
-- Uncommitted changes: yes (10 files modified)
+- Last commit: 19f62b9 Fix XAML type resolution crash in ConditionsStepView Remove button
+- Pushed to: origin/main
+- Release: R-1.4.0 (PUBLISHED, re-created with fix)
 
 ## Loaded Rules
 - general.md, dotnet.md
 
 ## User Preferences (This Session)
-- None
+- Commit, push, and release via dedicated _GithubPublish.sh script

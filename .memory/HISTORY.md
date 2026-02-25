@@ -342,10 +342,23 @@
 - Files: ConditionsStepViewModel.cs, ConnectionStepViewModel.cs, AnalysisStepViewModel.cs, SummaryStepViewModel.cs, ExecutionStepViewModel.cs
 - Result: Build 0W 0E
 
-## [2026-02-25 15:03] Step 3: Fix UI freezing
+## [2026-02-25 15:03] Step 3: Fix UI freezing (IsBusy overlay)
 - Action: Added [ObservableProperty] bool _isBusy with NotifyPropertyChangedFor/NotifyCanExecuteChangedFor to MainWindowViewModel. Updated CanGoBack/CanGoNext to include !IsBusy. Wrapped GoNextAsync cases 1-3 with IsBusy=true/finally{IsBusy=false}. Wrapped MainWindow.axaml DockPanel in Panel, added semi-transparent busy overlay with indeterminate ProgressBar + "Processing..." text.
 - Files: MainWindowViewModel.cs, MainWindow.axaml
 - Result: Build 0W 0E, 224 tests passing
+
+## [2026-02-25 14:29] Step 5: Fix XAML type resolution crash (root cause)
+- Action: Replaced compiled binding type cast `$parent[ItemsControl].((vm:ConditionsStepViewModel)DataContext).RemoveConditionCommand` with `$parent[ItemsControl].Tag` pattern on ConditionsStepView.axaml line 84. The type cast fails at runtime on Windows when XAML type resolver cannot resolve vm:ConditionsStepViewModel inside a DataTemplate with different x:DataType. ItemsControl.Tag passes the command without type resolution.
+- Files: ConditionsStepView.axaml (2 edits: add Tag={Binding RemoveConditionCommand} to ItemsControl, change Button Command binding)
+- Result: Build 0W 0E. Re-published R-1.4.0 (--force). Commit 19f62b9.
+- URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.4.0
+
+## [2026-02-25 14:16] Step 4: Version bump, build, commit, push, release R-1.4.0
+- Action: Bumped version.txt 1.3.0→1.4.0, published 6 platform combinations (CLI+Desktop for linux-x64, osx-arm64, win-x64), created 3 ZIPs, committed 13 files (188 insertions), pushed master→main, ran _GithubPublish.sh
+- Files: version.txt, DEPLOYMENT/*.zip
+- Result: Release R-1.4.0 PUBLISHED, 5 assets
+- URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.4.0
+- Commit: 4e80f72
 
 ## [2026-02-25 12:55] Step 7: Version bump, commit, push, release
 - Action: Bumped version.txt 1.2.0→1.3.0, built Release (0W 0E), 224 tests pass, published 6 platform combinations (CLI+Desktop for linux-x64, osx-arm64, win-x64), created 3 ZIPs, committed 20 files (762 insertions), pushed master→main, ran _GithubPublish.sh
