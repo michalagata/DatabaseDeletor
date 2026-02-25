@@ -379,3 +379,38 @@
 - Result: Release R-1.6.0 PUBLISHED (not draft), 5 assets
 - URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.6.0
 - Commit: 824bc98
+
+## [2026-02-25 18:50] Session 15: Configurable Deletion Settings — DeletionMode + Batch Size + Transaction
+- Task: Add DeletionOptions entity, DeletionMode enum, configurable executors, Desktop step, CLI options, v1.7.0 release
+
+## [2026-02-25 18:50] Step 1: Domain layer
+- Action: Created DeletionMode enum (BatchDelete/SingleRowDelete/DirectDelete), DeletionOptions record (Mode, BatchSize, UseTransaction, EffectiveBatchSize, IsValid). Updated IBulkDeleteExecutor (DeletionOptions + DbConnection? + DbTransaction? params) and IDeletionExecutor (DeletionOptions param).
+- Files: 2 new (DeletionMode.cs, DeletionOptions.cs), 2 modified (IBulkDeleteExecutor.cs, IDeletionExecutor.cs)
+- Result: Build 0W 0E
+
+## [2026-02-25 18:50] Step 2: Infrastructure layer
+- Action: Removed hardcoded BatchSize=10000 from all 4 executors. Added mode switching (Direct/SingleRow/Batch) and connection reuse pattern. Updated DeletionExecutor with transaction wrapping support (ExecuteWithTransactionAsync/ExecuteWithoutTransactionAsync).
+- Files: 5 modified (SqlServer/PostgreSql/MySql/OracleBulkDeleteExecutor.cs, DeletionExecutor.cs)
+- Result: Build 0W 0E
+
+## [2026-02-25 18:50] Step 3: Application + CLI layers
+- Action: Added DeletionOptions to ExecuteDeletionCommand. Wired --batch-size through CLI, added --deletion-mode and --use-transaction options. Added WriteDeletionSettings to ConsoleRenderer.
+- Files: 5 modified (ExecuteDeletionCommand.cs, ExecuteDeletionHandler.cs, Program.cs, DeletionService.cs, ConsoleRenderer.cs)
+- Result: Build 0W 0E
+
+## [2026-02-25 18:50] Step 4: Desktop layer
+- Action: Created DeletionSettingsStepViewModel (ComboBox-bound mode, validated BatchSize, UseTransaction, ModeSummary). Created DeletionSettingsStepView.axaml with full UI. Updated MainWindowViewModel (6 steps), ExecutionStepViewModel (DeletionOptions in tuple), MainWindow.axaml (DataTemplate), App.axaml.cs (DI).
+- Files: 3 new (DeletionSettingsStepViewModel.cs, DeletionSettingsStepView.axaml, .axaml.cs), 4 modified
+- Result: Build 0W 0E
+
+## [2026-02-25 18:50] Step 5: Tests
+- Action: Created DeletionModeTests (5 tests), DeletionOptionsTests (11 tests). Updated ExecuteDeletionHandlerTests, DeletionExecutorTests, DeletionServiceTests for new signatures + added DeletionOptions passthrough tests.
+- Files: 2 new, 3 modified test files
+- Result: Build 0W 0E, 245 tests all passing (89 Domain + 57 Application + 65 Infrastructure + 14 CLI + 20 API)
+
+## [2026-02-25 18:51] Step 6: Version bump, build, publish, release
+- Action: Bumped version.txt 1.6.0→1.7.0. Published 6 platform combinations (CLI+Desktop for linux-x64, osx-arm64, win-x64). Created 3 ZIPs (Linux 92MB, macOS 89MB, Windows 94MB). Committed 30 files (901 insertions, 123 deletions), pushed master→main, ran _GithubPublish.sh.
+- Files: version.txt, DEPLOYMENT/*.zip
+- Result: Release R-1.7.0 PUBLISHED (not draft), 5 assets
+- URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.7.0
+- Commit: 3f4a44d
