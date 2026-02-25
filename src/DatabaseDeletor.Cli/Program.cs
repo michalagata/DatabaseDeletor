@@ -19,6 +19,12 @@ Log.Logger = new LoggerConfiguration()
     .Enrich.WithEnvironmentName()
     .CreateLogger();
 
+#pragma warning disable CA1303 // Startup banner — no localization needed
+Console.WriteLine("DatabaseDeletor CLI");
+Console.WriteLine("(c) 2026 Michael Agata, Anubisworks. All Rights Reserved!");
+Console.WriteLine();
+#pragma warning restore CA1303
+
 #pragma warning disable CA1031 // Last-resort exception handler for application entry point
 try
 {

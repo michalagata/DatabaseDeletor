@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DatabaseDeletor.Desktop.Views.AboutWindow"
+        Title="About DatabaseDeletor"
+        Width="460" Height="340"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <StackPanel Margin="32" Spacing="16" VerticalAlignment="Center">
+        <TextBlock Text="DatabaseDeletor" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" />
+        <TextBlock x:Name="VersionText" FontSize="14" Foreground="#AAAAAA" HorizontalAlignment="Center" />
+
+        <Separator Margin="0,8" />
+
+        <TextBlock Text="Mass database deletion tool with dependency analysis."
+                   TextWrapping="Wrap" HorizontalAlignment="Center" FontSize="14" />
+
+        <TextBlock Text="(c) 2026 Michael Agata, Anubisworks. All Rights Reserved!"
+                   FontWeight="SemiBold" HorizontalAlignment="Center" FontSize="14" Margin="0,8,0,0" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12" Margin="0,16,0,0">
+            <Button Content="Documentation" Click="OnDocumentationClick" Padding="16,8" />
+            <Button Content="Close" Click="OnCloseClick" Padding="16,8" />
+        </StackPanel>
+    </StackPanel>
+</Window>
