@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -23,7 +24,7 @@ public partial class App : Avalonia.Application
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
-            .WriteTo.File("logs/database-deletor-desktop-.log",
+            .WriteTo.File(Path.Combine(AppContext.BaseDirectory, "logs", "database-deletor-desktop-.log"),
                 rollingInterval: RollingInterval.Day,
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
                 formatProvider: CultureInfo.InvariantCulture)
@@ -55,6 +56,8 @@ public partial class App : Avalonia.Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            desktop.ShutdownRequested += (_, _) => Log.CloseAndFlush();
+
             desktop.MainWindow = new MainWindow
             {
                 DataContext = Services.GetRequiredService<MainWindowViewModel>()

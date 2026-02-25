@@ -28,33 +28,46 @@
         </DataTemplate>
     </Window.DataTemplates>
 
-    <DockPanel>
-        <!-- Step indicator bar -->
-        <Border DockPanel.Dock="Top" Padding="16,8" Background="#1E1E2E">
-            <ItemsControl ItemsSource="{Binding StepTitles}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="16" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding}" FontSize="13" Foreground="#AAAAAA" />
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </Border>
+    <Panel>
+        <DockPanel>
+            <!-- Step indicator bar -->
+            <Border DockPanel.Dock="Top" Padding="16,8" Background="#1E1E2E">
+                <ItemsControl ItemsSource="{Binding StepTitles}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="16" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="13" Foreground="#AAAAAA" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
 
-        <!-- Navigation buttons -->
-        <Border DockPanel.Dock="Bottom" Padding="16,12" Background="#1E1E2E">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
-                <Button Content="Reset" Command="{Binding ResetCommand}" />
-                <Button Content="Back" Command="{Binding GoBackCommand}" />
-                <Button Content="Next" Command="{Binding GoNextCommand}" Classes="accent" />
+            <!-- Navigation buttons -->
+            <Border DockPanel.Dock="Bottom" Padding="16,12" Background="#1E1E2E">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+                    <Button Content="Reset" Command="{Binding ResetCommand}" />
+                    <Button Content="Back" Command="{Binding GoBackCommand}" />
+                    <Button Content="Next" Command="{Binding GoNextCommand}" Classes="accent" />
+                </StackPanel>
+            </Border>
+
+            <!-- Current step content -->
+            <ContentControl Content="{Binding CurrentStep}" Margin="16" />
+        </DockPanel>
+
+        <!-- Busy overlay -->
+        <Border IsVisible="{Binding IsBusy}"
+                Background="#80000000"
+                IsHitTestVisible="True">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16">
+                <ProgressBar IsIndeterminate="True" Width="200" />
+                <TextBlock Text="Processing..." Foreground="White" FontSize="16"
+                           HorizontalAlignment="Center" />
             </StackPanel>
         </Border>
-
-        <!-- Current step content -->
-        <ContentControl Content="{Binding CurrentStep}" Margin="16" />
-    </DockPanel>
+    </Panel>
 </Window>

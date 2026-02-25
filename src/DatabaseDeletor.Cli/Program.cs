@@ -11,7 +11,7 @@ using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .WriteTo.File("logs/database-deletor-.log",
+    .WriteTo.File(Path.Combine(AppContext.BaseDirectory, "logs", "database-deletor-.log"),
         rollingInterval: RollingInterval.Day,
         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
         formatProvider: CultureInfo.InvariantCulture)
@@ -78,7 +78,7 @@ try
                 .WriteTo.Console(
                     outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
                     formatProvider: CultureInfo.InvariantCulture)
-                .WriteTo.File("logs/database-deletor-.log",
+                .WriteTo.File(Path.Combine(AppContext.BaseDirectory, "logs", "database-deletor-.log"),
                     rollingInterval: RollingInterval.Day,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
                     formatProvider: CultureInfo.InvariantCulture)

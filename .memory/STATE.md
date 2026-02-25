@@ -1,38 +1,31 @@
 # Current State
 
 ## Active Task
-Restructure Desktop Wizard — Root Table First, WHERE Builder, Custom SQL
+Fix Desktop logging, crash, and UI freezing — 3 critical issues
 
 ## Status
 completed
 
 ## Completion
-100% — All 18 files (6 new, 12 modified) implemented, build 0W 0E, 224 tests passing
+100% — All 10 files modified, build 0W 0E, 224 tests passing
 
 ## Last Action
-Implemented full wizard restructure: swapped Steps 2/3 so user picks root table before dependency analysis, added WHERE condition builder with column/operator/value rows, added Custom SQL mode, created GetColumnsAsync across all layers
+Implemented 3-issue fix across 10 files: absolute log paths, global exception handlers, catch-block logging, AddCondition CanExecute guard, IsBusy overlay
 
 ## Next Step
-None — implementation complete. Ready for manual testing.
+None — ready for testing/release.
 
 ## Files Modified This Session
-- `src/DatabaseDeletor.Domain/Interfaces/ISchemaIntrospector.cs` — added GetColumnsAsync method
-- `src/DatabaseDeletor.Infrastructure/Database/Introspectors/SqlServerSchemaIntrospector.cs` — implemented GetColumnsAsync
-- `src/DatabaseDeletor.Infrastructure/Database/Introspectors/PostgreSqlSchemaIntrospector.cs` — implemented GetColumnsAsync
-- `src/DatabaseDeletor.Infrastructure/Database/Introspectors/MySqlSchemaIntrospector.cs` — implemented GetColumnsAsync
-- `src/DatabaseDeletor.Infrastructure/Database/Introspectors/OracleSchemaIntrospector.cs` — implemented GetColumnsAsync
-- `src/DatabaseDeletor.Application/Commands/GetColumnsCommand.cs` — new command record
-- `src/DatabaseDeletor.Application/Commands/GetColumnsHandler.cs` — new handler
-- `src/DatabaseDeletor.Application/DependencyInjection.cs` — registered GetColumnsHandler
-- `src/DatabaseDeletor.Desktop/ViewModels/DeletionScopeMode.cs` — new enum (DeleteAll, WhereCondition, CustomSql)
-- `src/DatabaseDeletor.Desktop/ViewModels/WhereConditionViewModel.cs` — new condition row VM with ToSqlFragment()
-- `src/DatabaseDeletor.Desktop/Converters/EnumToBooleanConverter.cs` — new IValueConverter for RadioButton↔enum
-- `src/DatabaseDeletor.Desktop/ViewModels/ConditionsStepViewModel.cs` — rewritten: LoadTables from selected tables, column fetching, WHERE builder, Custom SQL, EffectiveRootTable
-- `src/DatabaseDeletor.Desktop/ViewModels/AnalysisStepViewModel.cs` — args tuple now includes RootTable
-- `src/DatabaseDeletor.Desktop/ViewModels/MainWindowViewModel.cs` — rewritten: step order swapped, navigation updated
-- `src/DatabaseDeletor.Desktop/Views/ConditionsStepView.axaml` — full redesign with 3-mode UI
-- `src/DatabaseDeletor.Desktop/Views/AnalysisStepView.axaml` — title changed to Step 3
-- `tests/DatabaseDeletor.Application.Tests/Commands/GetColumnsHandlerTests.cs` — 5 new tests
+- `src/DatabaseDeletor.Desktop/App.axaml.cs` — absolute log path, System.IO using, ShutdownRequested flush
+- `src/DatabaseDeletor.Desktop/Program.cs` — global exception handlers (AppDomain, TaskScheduler), try/catch/finally with Log.CloseAndFlush()
+- `src/DatabaseDeletor.Cli/Program.cs` — absolute log paths (2 locations)
+- `src/DatabaseDeletor.Desktop/ViewModels/ConditionsStepViewModel.cs` — Log.Warning in catch blocks, CanAddCondition guard, NotifyCanExecuteChangedFor on _isLoadingColumns
+- `src/DatabaseDeletor.Desktop/ViewModels/ConnectionStepViewModel.cs` — Log.Error in catch block
+- `src/DatabaseDeletor.Desktop/ViewModels/AnalysisStepViewModel.cs` — Log.Error in catch block
+- `src/DatabaseDeletor.Desktop/ViewModels/SummaryStepViewModel.cs` — Log.Error in catch block
+- `src/DatabaseDeletor.Desktop/ViewModels/ExecutionStepViewModel.cs` — Log.Fatal in catch block
+- `src/DatabaseDeletor.Desktop/ViewModels/MainWindowViewModel.cs` — IsBusy property, CanGoBack/CanGoNext guards, try/finally wrapping
+- `src/DatabaseDeletor.Desktop/Views/MainWindow.axaml` — Panel wrapper, busy overlay with ProgressBar
 
 ## Open Decisions
 - None
@@ -42,13 +35,11 @@ None — implementation complete. Ready for manual testing.
 
 ## Git State
 - Branch: master
-- Last commit: 6d98855 Update memory files after R-1.2.0 release, clean nuget.config
-- Uncommitted changes: yes (all changes from this session)
+- Last commit: 96c766e Restructure Desktop wizard: root table first, WHERE builder, Custom SQL, v1.3.0
+- Uncommitted changes: yes (10 files modified)
 
 ## Loaded Rules
 - general.md, dotnet.md
 
 ## User Preferences (This Session)
-- Root table selection before dependency analysis
-- WHERE condition builder with AND/OR support
-- Custom SQL mode as third option
+- None

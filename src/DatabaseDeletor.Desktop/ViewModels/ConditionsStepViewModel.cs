@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using DatabaseDeletor.Application.Commands;
 using DatabaseDeletor.Domain.Entities;
 using DatabaseDeletor.Domain.Interfaces;
+using Serilog;
 
 namespace DatabaseDeletor.Desktop.ViewModels;
 
@@ -30,6 +31,7 @@ public sealed partial class ConditionsStepViewModel : ViewModelBase
     private string _whereClausePreview = string.Empty;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddConditionCommand))]
     private bool _isLoadingColumns;
 
     public ObservableCollection<TableInfo> AvailableTables { get; } = [];
@@ -99,9 +101,9 @@ public sealed partial class ConditionsStepViewModel : ViewModelBase
             }
         }
 #pragma warning disable CA1031 // UI error handler: catch-all is intentional
-        catch
+        catch (Exception ex)
         {
-            // Column loading is non-critical; user can still use CustomSql mode
+            Log.Warning(ex, "Failed to load columns for table {Schema}.{Table}", table.Schema, table.Name);
         }
 #pragma warning restore CA1031
         finally
@@ -110,7 +112,9 @@ public sealed partial class ConditionsStepViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand]
+    private bool CanAddCondition() => !IsLoadingColumns;
+
+    [RelayCommand(CanExecute = nameof(CanAddCondition))]
     private void AddCondition()
     {
         var condition = new WhereConditionViewModel();
@@ -189,8 +193,9 @@ public sealed partial class ConditionsStepViewModel : ViewModelBase
                 return match ?? SelectedReferenceTable;
             }
 #pragma warning disable CA1031 // UI error handler: catch-all is intentional
-            catch
+            catch (Exception ex)
             {
+                Log.Warning(ex, "Failed to parse custom SQL for root table resolution");
                 return SelectedReferenceTable;
             }
 #pragma warning restore CA1031

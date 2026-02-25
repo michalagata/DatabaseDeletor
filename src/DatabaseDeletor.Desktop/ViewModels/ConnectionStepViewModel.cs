@@ -6,6 +6,7 @@ using DatabaseDeletor.Application.Configuration;
 using DatabaseDeletor.Domain.Entities;
 using DatabaseDeletor.Domain.Interfaces;
 using Microsoft.Extensions.Options;
+using Serilog;
 
 namespace DatabaseDeletor.Desktop.ViewModels;
 
@@ -62,6 +63,7 @@ public sealed partial class ConnectionStepViewModel : ViewModelBase
 #pragma warning disable CA1031 // UI error handler: catch-all is intentional
         catch (Exception ex)
         {
+            Log.Error(ex, "Connection failed");
             ErrorMessage = $"Connection failed: {ex.Message}";
         }
 #pragma warning restore CA1031

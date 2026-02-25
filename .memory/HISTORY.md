@@ -327,3 +327,29 @@
 - Action: Created GetColumnsHandlerTests.cs with 5 tests (valid command, null request, no matching introspector, correct parameters, cancellation token propagation)
 - Files: GetColumnsHandlerTests.cs (new)
 - Result: Build 0W 0E, 224 tests all passing (70 Domain + 57 Application + 64 Infrastructure + 13 CLI + 20 API)
+
+## [2026-02-25 15:00] Session 12: Fix Desktop Logging, Crash, and UI Freezing
+- Task: Fix 3 critical issues — logging paths, Add Condition crash, UI freezing
+- Rules loaded: general.md, dotnet.md
+
+## [2026-02-25 15:01] Step 1: Fix logging paths + global exception handlers
+- Action: Changed relative log paths to absolute (Path.Combine(AppContext.BaseDirectory, ...)) in App.axaml.cs and CLI Program.cs (2 locations). Added ShutdownRequested flush in App.axaml.cs. Rewrote Desktop Program.cs with AppDomain.UnhandledException, TaskScheduler.UnobservedTaskException, try/catch/finally with Log.CloseAndFlush().
+- Files: App.axaml.cs, Desktop/Program.cs, Cli/Program.cs
+- Result: Build 0W 0E
+
+## [2026-02-25 15:02] Step 2: Fix crash + add logging to all catch blocks
+- Action: Added Log.Warning to ConditionsStepViewModel silent catch blocks (LoadColumnsAsync and EffectiveRootTable). Added CanAddCondition() guard with [RelayCommand(CanExecute)] and [NotifyCanExecuteChangedFor] on _isLoadingColumns. Added Log.Error/Fatal to ConnectionStep, AnalysisStep, SummaryStep, ExecutionStep catch blocks. All VMs got `using Serilog;`.
+- Files: ConditionsStepViewModel.cs, ConnectionStepViewModel.cs, AnalysisStepViewModel.cs, SummaryStepViewModel.cs, ExecutionStepViewModel.cs
+- Result: Build 0W 0E
+
+## [2026-02-25 15:03] Step 3: Fix UI freezing
+- Action: Added [ObservableProperty] bool _isBusy with NotifyPropertyChangedFor/NotifyCanExecuteChangedFor to MainWindowViewModel. Updated CanGoBack/CanGoNext to include !IsBusy. Wrapped GoNextAsync cases 1-3 with IsBusy=true/finally{IsBusy=false}. Wrapped MainWindow.axaml DockPanel in Panel, added semi-transparent busy overlay with indeterminate ProgressBar + "Processing..." text.
+- Files: MainWindowViewModel.cs, MainWindow.axaml
+- Result: Build 0W 0E, 224 tests passing
+
+## [2026-02-25 12:55] Step 7: Version bump, commit, push, release
+- Action: Bumped version.txt 1.2.0→1.3.0, built Release (0W 0E), 224 tests pass, published 6 platform combinations (CLI+Desktop for linux-x64, osx-arm64, win-x64), created 3 ZIPs, committed 20 files (762 insertions), pushed master→main, ran _GithubPublish.sh
+- Files: version.txt, DEPLOYMENT/*.zip
+- Result: Release R-1.3.0 PUBLISHED, 5 assets
+- URL: https://github.com/michalagata/DatabaseDeletor/releases/tag/R-1.3.0
+- Commit: 96c766e

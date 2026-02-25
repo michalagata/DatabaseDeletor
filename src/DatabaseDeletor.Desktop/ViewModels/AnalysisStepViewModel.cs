@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using DatabaseDeletor.Application.Commands;
 using DatabaseDeletor.Domain.Entities;
 using DatabaseDeletor.Domain.Interfaces;
+using Serilog;
 
 namespace DatabaseDeletor.Desktop.ViewModels;
 
@@ -87,6 +88,7 @@ public sealed partial class AnalysisStepViewModel : ViewModelBase
 #pragma warning disable CA1031 // UI error handler: catch-all is intentional
         catch (Exception ex)
         {
+            Log.Error(ex, "Dependency analysis failed");
             ErrorMessage = $"Analysis failed: {ex.Message}";
         }
 #pragma warning restore CA1031

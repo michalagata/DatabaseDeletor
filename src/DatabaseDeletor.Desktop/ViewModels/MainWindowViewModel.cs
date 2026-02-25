@@ -14,6 +14,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private int _currentStepIndex;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanGoBack))]
+    [NotifyPropertyChangedFor(nameof(CanGoNext))]
+    [NotifyCanExecuteChangedFor(nameof(GoBackCommand))]
+    [NotifyCanExecuteChangedFor(nameof(GoNextCommand))]
+    private bool _isBusy;
+
+    [ObservableProperty]
     private ViewModelBase _currentStep;
 
     public ConnectionStepViewModel ConnectionStep { get; }
@@ -22,8 +29,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public SummaryStepViewModel SummaryStep { get; }
     public ExecutionStepViewModel ExecutionStep { get; }
 
-    public bool CanGoBack => CurrentStepIndex > 0 && !ExecutionStep.IsExecuting;
-    public bool CanGoNext => CurrentStepIndex < 4 && !ExecutionStep.IsExecuting;
+    public bool CanGoBack => CurrentStepIndex > 0 && !ExecutionStep.IsExecuting && !IsBusy;
+    public bool CanGoNext => CurrentStepIndex < 4 && !ExecutionStep.IsExecuting && !IsBusy;
     public bool IsLastStep => CurrentStepIndex == 4;
 
     public IReadOnlyList<string> StepTitles { get; } =
@@ -76,30 +83,57 @@ public sealed partial class MainWindowViewModel : ViewModelBase
                 if (ConditionsStep.EffectiveRootTable is null) return;
                 CurrentStepIndex++;
                 UpdateCurrentStep();
-                await AnalysisStep.AnalyzeCommand.ExecuteAsync(
-                    (ConnectionStep.ConnectionString,
-                     ConditionsStep.EffectiveRootTable,
-                     ConnectionStep.GetSelectedTables(),
-                     ConnectionStep.GetExcludedTables())).ConfigureAwait(true);
+                IsBusy = true;
+                try
+                {
+                    await AnalysisStep.AnalyzeCommand.ExecuteAsync(
+                        (ConnectionStep.ConnectionString,
+                         ConditionsStep.EffectiveRootTable,
+                         ConnectionStep.GetSelectedTables(),
+                         ConnectionStep.GetExcludedTables())).ConfigureAwait(true);
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
+
                 break;
 
             case 2: // Analysis → Summary
                 if (!AnalysisStep.IsValid || AnalysisStep.Graph is null) return;
                 CurrentStepIndex++;
                 UpdateCurrentStep();
-                await SummaryStep.GeneratePlanCommand.ExecuteAsync(
-                    (ConnectionStep.ConnectionString,
-                     AnalysisStep.Graph,
-                     ConditionsStep.EffectiveRootTable!,
-                     ConditionsStep.WhereClause)).ConfigureAwait(true);
+                IsBusy = true;
+                try
+                {
+                    await SummaryStep.GeneratePlanCommand.ExecuteAsync(
+                        (ConnectionStep.ConnectionString,
+                         AnalysisStep.Graph,
+                         ConditionsStep.EffectiveRootTable!,
+                         ConditionsStep.WhereClause)).ConfigureAwait(true);
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
+
                 break;
 
             case 3: // Summary → Execution
                 if (SummaryStep.Plan is null) return;
                 CurrentStepIndex++;
                 UpdateCurrentStep();
-                await ExecutionStep.ExecuteCommand.ExecuteAsync(
-                    (ConnectionStep.ConnectionString, SummaryStep.Plan)).ConfigureAwait(true);
+                IsBusy = true;
+                try
+                {
+                    await ExecutionStep.ExecuteCommand.ExecuteAsync(
+                        (ConnectionStep.ConnectionString, SummaryStep.Plan)).ConfigureAwait(true);
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
+
                 break;
         }
     }
