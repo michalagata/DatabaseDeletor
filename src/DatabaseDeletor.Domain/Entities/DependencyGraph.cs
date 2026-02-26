@@ -82,4 +82,34 @@ public sealed class DependencyGraph
 
         return filtered;
     }
+
+    public DependencyTreeNode BuildDependencyTree(TableInfo rootTable)
+    {
+        ArgumentNullException.ThrowIfNull(rootTable);
+
+        var visited = new HashSet<TableInfo>();
+
+        DependencyTreeNode BuildNode(TableInfo table, ForeignKeyInfo? parentFk, int depth)
+        {
+            var node = new DependencyTreeNode
+            {
+                Table = table,
+                ParentForeignKey = parentFk,
+                Depth = depth
+            };
+
+            if (!visited.Add(table))
+                return node;
+
+            foreach (var fk in GetIncomingReferences(table))
+            {
+                var child = BuildNode(fk.ReferencingTable, fk, depth + 1);
+                node.Children.Add(child);
+            }
+
+            return node;
+        }
+
+        return BuildNode(rootTable, null, 0);
+    }
 }

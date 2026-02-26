@@ -36,7 +36,8 @@ public sealed partial class ExclusionValidator : IExclusionValidator
             {
                 IsValid = true,
                 Conflicts = [],
-                Recommendations = []
+                Recommendations = [],
+                Suggestions = []
             };
         }
 
@@ -49,6 +50,7 @@ public sealed partial class ExclusionValidator : IExclusionValidator
         var selectedSet = new HashSet<TableInfo>(selectedTables);
         var conflicts = new List<ExclusionConflict>();
         var recommendations = new List<string>();
+        var suggestions = new List<ResolutionSuggestion>();
 
         foreach (var selectedTable in selectedTables)
         {
@@ -69,6 +71,13 @@ public sealed partial class ExclusionValidator : IExclusionValidator
                         Reason = $"Selected table {selectedTable.FullName} has FK '{fk.ConstraintName}' referencing excluded table {fk.ReferencedTable.FullName}",
                         Recommendation = $"Include {fk.ReferencedTable.FullName} in deletion or exclude {selectedTable.FullName} from deletion"
                     });
+
+                    suggestions.Add(new ResolutionSuggestion
+                    {
+                        Action = ResolutionAction.IncludeInDeletion,
+                        TargetTable = fk.ReferencedTable,
+                        Description = $"Add {fk.ReferencedTable.FullName} back to the deletion set to satisfy FK '{fk.ConstraintName}'"
+                    });
                 }
             }
 
@@ -87,6 +96,20 @@ public sealed partial class ExclusionValidator : IExclusionValidator
                         ForeignKey = fk,
                         Reason = $"Excluded table {fk.ReferencingTable.FullName} references selected table {selectedTable.FullName} via FK '{fk.ConstraintName}' (delete rule: {fk.DeleteRule})",
                         Recommendation = $"Include {fk.ReferencingTable.FullName} in deletion or use CASCADE delete rule on FK '{fk.ConstraintName}'"
+                    });
+
+                    suggestions.Add(new ResolutionSuggestion
+                    {
+                        Action = ResolutionAction.IncludeInDeletion,
+                        TargetTable = fk.ReferencingTable,
+                        Description = $"Add {fk.ReferencingTable.FullName} back to the deletion set to satisfy FK '{fk.ConstraintName}'"
+                    });
+
+                    suggestions.Add(new ResolutionSuggestion
+                    {
+                        Action = ResolutionAction.ExcludeFromDeletion,
+                        TargetTable = selectedTable,
+                        Description = $"Remove {selectedTable.FullName} from the deletion set to avoid conflict with excluded {fk.ReferencingTable.FullName}"
                     });
                 }
             }
@@ -113,7 +136,8 @@ public sealed partial class ExclusionValidator : IExclusionValidator
         {
             IsValid = conflicts.Count == 0,
             Conflicts = conflicts,
-            Recommendations = recommendations
+            Recommendations = recommendations,
+            Suggestions = suggestions
         };
     }
 

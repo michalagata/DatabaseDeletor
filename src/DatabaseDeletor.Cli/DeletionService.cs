@@ -64,6 +64,12 @@ internal sealed class DeletionService
 
         ConsoleRenderer.WriteInfo($"Found {graph.Tables.Count} related table(s).");
 
+        // Display dependency tree
+        var rootTableForTree = graph.Tables.First(t =>
+            string.Equals(t.Schema, parsed.Schema, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(t.Name, parsed.TableName, StringComparison.OrdinalIgnoreCase));
+        ConsoleRenderer.WriteDependencyTree(graph, rootTableForTree);
+
         // Step 2.5: Validate exclusions (if any)
         if (allExcludedTables.Count > 0)
         {
@@ -92,6 +98,10 @@ internal sealed class DeletionService
 
         var plan = await mediator.SendAsync(
             new GenerateDeletionPlanCommand(connectionString, graph, rootTable, parsed.WhereClause), ct).ConfigureAwait(false);
+
+        // Display deletion order
+        var deletionOrder = graph.GetTopologicalDeletionOrder(rootTable);
+        ConsoleRenderer.WriteDeletionOrder(deletionOrder);
 
         // Step 4: Display plan and confirm
         ConsoleRenderer.WriteDeletionPlan(plan);

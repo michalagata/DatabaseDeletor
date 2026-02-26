@@ -29,6 +29,11 @@ public sealed partial class AnalysisStepViewModel : ViewModelBase
 
     public ObservableCollection<ExclusionConflict> Conflicts { get; } = [];
     public ObservableCollection<string> Recommendations { get; } = [];
+    public ObservableCollection<ResolutionSuggestion> Suggestions { get; } = [];
+    public ObservableCollection<TableInfo> DeletionOrder { get; } = [];
+
+    [ObservableProperty]
+    private DependencyTreeNode? _dependencyTree;
 
     public DependencyGraph? Graph { get; private set; }
 
@@ -47,6 +52,9 @@ public sealed partial class AnalysisStepViewModel : ViewModelBase
         ErrorMessage = null;
         Conflicts.Clear();
         Recommendations.Clear();
+        Suggestions.Clear();
+        DeletionOrder.Clear();
+        DependencyTree = null;
         Graph = null;
 
         try
@@ -75,12 +83,25 @@ public sealed partial class AnalysisStepViewModel : ViewModelBase
                 foreach (var rec in exclusionResult.Recommendations)
                     Recommendations.Add(rec);
 
+                foreach (var suggestion in exclusionResult.Suggestions)
+                    Suggestions.Add(suggestion);
+
                 if (IsValid)
                     Graph = Graph.FilterExcludedTables(args.ExcludedTables);
             }
             else
             {
                 IsValid = true;
+            }
+
+            // Build dependency tree and deletion order for visualization
+            if (Graph is not null)
+            {
+                DependencyTree = Graph.BuildDependencyTree(args.RootTable);
+
+                var order = Graph.GetTopologicalDeletionOrder(args.RootTable);
+                foreach (var table in order)
+                    DeletionOrder.Add(table);
             }
 
             AnalysisComplete = true;

@@ -121,6 +121,60 @@ internal static class ConsoleRenderer
         }
     }
 
+    public static void WriteDependencyTree(DependencyGraph graph, TableInfo rootTable)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        ArgumentNullException.ThrowIfNull(rootTable);
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(new Rule("[bold cyan]Dependency Tree[/]").RuleStyle("grey"));
+
+        var treeNode = graph.BuildDependencyTree(rootTable);
+        var tree = new Tree(FormatTreeNodeLabel(treeNode));
+
+        AddChildNodes(tree, treeNode);
+
+        AnsiConsole.Write(tree);
+        AnsiConsole.WriteLine();
+    }
+
+    private static string FormatTreeNodeLabel(DependencyTreeNode node)
+    {
+        var label = $"[bold]{Markup.Escape(node.Table.FullName)}[/] [grey]({node.Table.RowCount.ToString("N0", CultureInfo.InvariantCulture)} rows)[/]";
+
+        if (node.ParentForeignKey is { } fk)
+        {
+            label += $" [dim][[{Markup.Escape(fk.ConstraintName)} → {Markup.Escape(fk.ReferencingColumn)}]][/]";
+        }
+
+        return label;
+    }
+
+    private static void AddChildNodes(IHasTreeNodes parent, DependencyTreeNode node)
+    {
+        foreach (var child in node.Children)
+        {
+            var childNode = parent.AddNode(FormatTreeNodeLabel(child));
+            AddChildNodes(childNode, child);
+        }
+    }
+
+    public static void WriteDeletionOrder(IReadOnlyList<TableInfo> order)
+    {
+        ArgumentNullException.ThrowIfNull(order);
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(new Rule("[bold cyan]Deletion Order (bottom-up)[/]").RuleStyle("grey"));
+
+        for (var i = 0; i < order.Count; i++)
+        {
+            var table = order[i];
+            AnsiConsole.MarkupLine($"  [bold]{(i + 1).ToString(CultureInfo.InvariantCulture)}.[/] {Markup.Escape(table.FullName)} [grey]({table.RowCount.ToString("N0", CultureInfo.InvariantCulture)} rows)[/]");
+        }
+
+        AnsiConsole.WriteLine();
+    }
+
     public static void WriteConfigLoaded(string path)
     {
         AnsiConsole.MarkupLine($"  [green]>[/] Configuration loaded from: {Markup.Escape(path)}");
@@ -163,6 +217,18 @@ internal static class ConsoleRenderer
             foreach (var rec in result.Recommendations)
             {
                 AnsiConsole.MarkupLine($"  [yellow]>[/] {Markup.Escape(rec)}");
+            }
+        }
+
+        if (result.Suggestions.Count > 0)
+        {
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[bold yellow]Suggested Actions:[/]");
+            foreach (var suggestion in result.Suggestions)
+            {
+                var icon = suggestion.Action == ResolutionAction.IncludeInDeletion ? "[green]+[/]" : "[red]-[/]";
+                var action = suggestion.Action == ResolutionAction.IncludeInDeletion ? "Include" : "Exclude";
+                AnsiConsole.MarkupLine($"  {icon} [bold]{Markup.Escape(action)}[/] {Markup.Escape(suggestion.TargetTable.FullName)}: {Markup.Escape(suggestion.Description)}");
             }
         }
 
