@@ -70,4 +70,17 @@ public sealed partial class DeletionSettingsStepViewModel : ViewModelBase
         BatchSize = IsBatchMode ? BatchSize : DeletionOptions.DefaultBatchSize,
         UseTransaction = UseTransaction
     };
+
+    public void ImportSettings(DeletionSettingsProfile settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+
+        if (Enum.TryParse<DeletionMode>(settings.Mode, true, out var mode))
+        {
+            SelectedMode = mode;
+        }
+
+        BatchSize = settings.BatchSize;
+        UseTransaction = settings.UseTransaction;
+    }
 }

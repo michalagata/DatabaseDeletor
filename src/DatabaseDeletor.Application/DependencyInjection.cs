@@ -14,6 +14,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<IMediator, Mediator.Mediator>();
         services.AddSingleton<ISqlParser, SqlParser>();
+        services.AddSingleton<IConfigurationProfileService, ConfigurationProfileService>();
 
         services.AddTransient<IRequestHandler<AnalyzeDependenciesCommand, DependencyGraph>, AnalyzeDependenciesHandler>();
         services.AddTransient<IRequestHandler<GenerateDeletionPlanCommand, DeletionPlan>, GenerateDeletionPlanHandler>();

@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Globalization;
 using DatabaseDeletor.Application;
 using DatabaseDeletor.Application.Configuration;
+using DatabaseDeletor.Application.Services;
 using DatabaseDeletor.Cli;
 using DatabaseDeletor.Domain.Entities;
 using DatabaseDeletor.Domain.Enums;
@@ -32,14 +33,12 @@ try
 {
     var connectionStringOption = new Option<string>("--connection-string", "-c")
     {
-        Description = "Full database connection string",
-        Required = true
+        Description = "Full database connection string"
     };
 
     var sqlOption = new Option<string>("--sql", "-s")
     {
-        Description = "SQL query targeting the table (DELETE FROM or SELECT FROM)",
-        Required = true
+        Description = "SQL query targeting the table (DELETE FROM or SELECT FROM)"
     };
 
     var noConfirmOption = new Option<bool>("--no-confirm", "-y")
@@ -74,6 +73,16 @@ try
         Description = "Enable verbose logging output"
     };
 
+    var configOption = new Option<string>("--config")
+    {
+        Description = "Path to JSON configuration file to load (overrides --connection-string, --sql, --exclude-tables, --deletion-mode, --batch-size, --use-transaction)"
+    };
+
+    var exportConfigOption = new Option<string>("--export-config")
+    {
+        Description = "Path to save current configuration as JSON (exports config and exits, no deletion)"
+    };
+
     var rootCommand = new RootCommand("DatabaseDeletor - Mass database deletion tool with dependency analysis");
     rootCommand.Add(connectionStringOption);
     rootCommand.Add(sqlOption);
@@ -83,31 +92,14 @@ try
     rootCommand.Add(useTransactionOption);
     rootCommand.Add(excludeTablesOption);
     rootCommand.Add(verboseOption);
+    rootCommand.Add(configOption);
+    rootCommand.Add(exportConfigOption);
 
     rootCommand.SetAction(async (ParseResult result, CancellationToken ct) =>
     {
-        var connectionString = result.GetRequiredValue(connectionStringOption);
-        var sql = result.GetRequiredValue(sqlOption);
-        var noConfirm = result.GetValue(noConfirmOption);
-        var batchSize = result.GetValue(batchSizeOption);
-        var deletionMode = result.GetValue(deletionModeOption);
-        var useTransaction = result.GetValue(useTransactionOption);
-        var excludeTables = result.GetValue(excludeTablesOption) ?? [];
+        var configPath = result.GetValue(configOption);
+        var exportConfigPath = result.GetValue(exportConfigOption);
         var verbose = result.GetValue(verboseOption);
-
-        var deletionOptions = new DeletionOptions
-        {
-            Mode = deletionMode,
-            BatchSize = batchSize,
-            UseTransaction = useTransaction
-        };
-
-        if (!deletionOptions.IsValid)
-        {
-            ConsoleRenderer.WriteError(
-                $"Invalid batch size: {batchSize}. Must be between {DeletionOptions.MinBatchSize} and {DeletionOptions.MaxBatchSize}.");
-            return;
-        }
 
         if (verbose)
         {
@@ -134,6 +126,110 @@ try
                 services.Configure<ExclusionOptions>(ctx.Configuration.GetSection(ExclusionOptions.SectionName));
             })
             .Build();
+
+        var profileService = host.Services.GetRequiredService<IConfigurationProfileService>();
+
+        // Load config from JSON file if --config is specified
+        string connectionString;
+        string sql;
+        string[] excludeTables;
+        DeletionMode deletionMode;
+        int batchSize;
+        bool useTransaction;
+
+        if (!string.IsNullOrEmpty(configPath))
+        {
+            DeletionProfile profile;
+            try
+            {
+                profile = await profileService.ImportFromFileAsync(configPath, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is FileNotFoundException or InvalidOperationException)
+            {
+                ConsoleRenderer.WriteError($"Failed to load config: {ex.Message}");
+                return;
+            }
+
+            ConsoleRenderer.WriteConfigLoaded(configPath);
+
+            // Config values as base; CLI --connection-string, --sql, --exclude-tables override if provided
+            connectionString = result.GetValue(connectionStringOption) ?? profile.ConnectionString;
+            sql = result.GetValue(sqlOption) ?? profile.Sql ?? string.Empty;
+            excludeTables = result.GetValue(excludeTablesOption) ?? profile.ExcludedTables.ToArray();
+
+            // Deletion settings from config (use CLI --deletion-mode/--batch-size/--use-transaction to override
+            // only when config is NOT used; when config IS used, config values take priority for settings)
+            deletionMode = Enum.TryParse<DeletionMode>(profile.DeletionSettings.Mode, true, out var m) ? m : DeletionMode.BatchDelete;
+            batchSize = profile.DeletionSettings.BatchSize;
+            useTransaction = profile.DeletionSettings.UseTransaction;
+        }
+        else
+        {
+            connectionString = result.GetValue(connectionStringOption) ?? string.Empty;
+            sql = result.GetValue(sqlOption) ?? string.Empty;
+            excludeTables = result.GetValue(excludeTablesOption) ?? [];
+            deletionMode = result.GetValue(deletionModeOption);
+            batchSize = result.GetValue(batchSizeOption);
+            useTransaction = result.GetValue(useTransactionOption);
+        }
+
+        // Handle --export-config: build profile from params and save
+        if (!string.IsNullOrEmpty(exportConfigPath))
+        {
+            var exportProfile = new DeletionProfile
+            {
+                ConnectionString = connectionString,
+                Sql = string.IsNullOrEmpty(sql) ? null : sql,
+                ExcludedTables = excludeTables.Length > 0 ? excludeTables : [],
+                DeletionSettings = new DeletionSettingsProfile
+                {
+                    Mode = deletionMode.ToString(),
+                    BatchSize = batchSize,
+                    UseTransaction = useTransaction
+                }
+            };
+
+            try
+            {
+                await profileService.ExportToFileAsync(exportProfile, exportConfigPath, ct).ConfigureAwait(false);
+                ConsoleRenderer.WriteConfigExported(exportConfigPath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                ConsoleRenderer.WriteError($"Failed to export config: {ex.Message}");
+            }
+
+            return;
+        }
+
+        // Validate required params for deletion
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            ConsoleRenderer.WriteError("Connection string is required. Use --connection-string or --config.");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(sql))
+        {
+            ConsoleRenderer.WriteError("SQL query is required. Use --sql or --config.");
+            return;
+        }
+
+        var noConfirm = result.GetValue(noConfirmOption);
+
+        var deletionOptions = new DeletionOptions
+        {
+            Mode = deletionMode,
+            BatchSize = batchSize,
+            UseTransaction = useTransaction
+        };
+
+        if (!deletionOptions.IsValid)
+        {
+            ConsoleRenderer.WriteError(
+                $"Invalid batch size: {batchSize}. Must be between {DeletionOptions.MinBatchSize} and {DeletionOptions.MaxBatchSize}.");
+            return;
+        }
 
         var exclusionOptions = host.Services.GetRequiredService<IOptions<ExclusionOptions>>();
         var globalExcludedTables = exclusionOptions.Value.GetParsedTables();

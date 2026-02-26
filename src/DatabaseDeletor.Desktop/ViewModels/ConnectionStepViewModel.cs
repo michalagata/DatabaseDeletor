@@ -98,4 +98,9 @@ public sealed partial class ConnectionStepViewModel : ViewModelBase
 
     public IReadOnlyList<TableInfo> GetExcludedTables() =>
         Tables.Where(t => !t.IsSelected).Select(t => t.Table).ToList();
+
+    public void SetConnectionString(string connectionString)
+    {
+        ConnectionString = connectionString;
+    }
 }

@@ -221,4 +221,35 @@ public sealed partial class ConditionsStepViewModel : ViewModelBase
         }
 #pragma warning restore CA1031
     }
+
+    public void ImportConditions(ScopeProfile scope)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+
+        if (Enum.TryParse<DeletionScopeMode>(scope.ScopeMode, true, out var mode))
+        {
+            ScopeMode = mode;
+        }
+
+        if (!string.IsNullOrEmpty(scope.CustomSql))
+        {
+            CustomSqlQuery = scope.CustomSql;
+        }
+
+        Conditions.Clear();
+        foreach (var wc in scope.WhereConditions)
+        {
+            var condition = new WhereConditionViewModel
+            {
+                SelectedOperator = wc.Operator,
+                Value = wc.Value,
+                LogicalOperator = wc.LogicalOperator
+            };
+
+            condition.PropertyChanged += (_, _) => UpdateWhereClausePreview();
+            Conditions.Add(condition);
+        }
+
+        UpdateWhereClausePreview();
+    }
 }

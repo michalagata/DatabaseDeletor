@@ -52,7 +52,11 @@
             <!-- Navigation buttons -->
             <Border DockPanel.Dock="Bottom" Padding="16,12" Background="#1E1E2E">
                 <Grid ColumnDefinitions="Auto,*,Auto">
-                    <Button Grid.Column="0" Content="Help" Click="OnHelpClick" Padding="12,6" />
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                        <Button Content="Help" Click="OnHelpClick" Padding="12,6" />
+                        <Button Content="Export" Click="OnExportClick" Padding="12,6" />
+                        <Button Content="Import" Click="OnImportClick" Padding="12,6" />
+                    </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
                         <Button Content="Reset" Command="{Binding ResetCommand}" />
                         <Button Content="Back" Command="{Binding GoBackCommand}" />

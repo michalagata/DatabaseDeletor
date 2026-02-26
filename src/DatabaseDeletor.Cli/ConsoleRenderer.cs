@@ -121,6 +121,16 @@ internal static class ConsoleRenderer
         }
     }
 
+    public static void WriteConfigLoaded(string path)
+    {
+        AnsiConsole.MarkupLine($"  [green]>[/] Configuration loaded from: {Markup.Escape(path)}");
+    }
+
+    public static void WriteConfigExported(string path)
+    {
+        AnsiConsole.MarkupLine($"  [green]>[/] Configuration exported to: {Markup.Escape(path)}");
+    }
+
     public static void WriteExclusionConflictReport(ExclusionAnalysisResult result)
     {
         ArgumentNullException.ThrowIfNull(result);

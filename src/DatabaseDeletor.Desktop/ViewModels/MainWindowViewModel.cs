@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DatabaseDeletor.Domain.Entities;
+using DatabaseDeletor.Domain.Enums;
 
 namespace DatabaseDeletor.Desktop.ViewModels;
 
@@ -168,5 +170,66 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             5 => ExecutionStep,
             _ => ConnectionStep
         };
+    }
+
+    public DeletionProfile ExportProfile()
+    {
+        var conditions = ConditionsStep.Conditions
+            .Where(c => c.SelectedColumn is not null)
+            .Select(c => new WhereConditionProfile
+            {
+                Column = c.SelectedColumn!.Name,
+                Operator = c.SelectedOperator,
+                Value = c.Value,
+                LogicalOperator = c.LogicalOperator
+            })
+            .ToList();
+
+        var scope = new ScopeProfile
+        {
+            RootTable = ConditionsStep.SelectedReferenceTable?.FullName ?? string.Empty,
+            ScopeMode = ConditionsStep.ScopeMode.ToString(),
+            WhereConditions = conditions,
+            CustomSql = ConditionsStep.ScopeMode == DeletionScopeMode.CustomSql
+                ? ConditionsStep.CustomSqlQuery
+                : null
+        };
+
+        var excludedTables = ConnectionStep.GetExcludedTables()
+            .Select(t => t.FullName)
+            .ToList();
+
+        return new DeletionProfile
+        {
+            ConnectionString = ConnectionStep.ConnectionString,
+            ExcludedTables = excludedTables,
+            DeletionSettings = new DeletionSettingsProfile
+            {
+                Mode = DeletionSettingsStep.SelectedMode.ToString(),
+                BatchSize = DeletionSettingsStep.BatchSize,
+                UseTransaction = DeletionSettingsStep.UseTransaction
+            },
+            Scope = scope
+        };
+    }
+
+    public void ImportProfile(DeletionProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+
+        ConnectionStep.SetConnectionString(profile.ConnectionString);
+
+        if (Enum.TryParse<DeletionMode>(profile.DeletionSettings.Mode, true, out var mode))
+        {
+            DeletionSettingsStep.ImportSettings(profile.DeletionSettings);
+        }
+
+        if (profile.Scope is not null)
+        {
+            ConditionsStep.ImportConditions(profile.Scope);
+        }
+
+        CurrentStepIndex = 0;
+        UpdateCurrentStep();
     }
 }
